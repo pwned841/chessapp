@@ -2,20 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
-  color: var(--foreground);
-  background: var(--background);
+  background: linear-gradient(to top, #2C5364, #203A43, #0F2027);
+
   font-family: Arial, Helvetica, sans-serif;
+  height: 100vh; /* Fond couvre toute la fenêtre */
+  /* Suppression valeurs par défaut */
+  margin: 50px;
+  padding: 0;
+  overflow: hidden; /* Évite le défilement */
 }
+
