@@ -1,77 +1,17 @@
-"use client"
-
-import * as React from "react"
-import Link from "next/link"
-
-import { cn } from "@/lib/utils"
-import {
-    NavigationMenu,
-    NavigationMenuItem,
-    NavigationMenuLink,
-    NavigationMenuList,
-    navigationMenuTriggerStyle,
-} from "@/components/ui/navigation-menu"
+"use client";
 
 export default function Navbar() {
     return (
-        <div className="flex justify-center items-center w-full">
-            <Menu />
-        </div>
+        <nav className="w-full py-4 px-8 backdrop-blur-lg bg-purple-900/20 rounded-2xl">
+            <div className="flex justify-between items-center max-w-6xl mx-auto">
+                <a href="#" className="text-2xl font-bold text-purple-700 hover:text-purple-600">
+                    ChessApp
+                </a>
+
+                <button className="bg-purple-950 hover:bg-purple-900 text-white px-4 py-2 rounded-md transition-all">
+                    Sign Up
+                </button>
+            </div>
+        </nav>
     );
 }
-
-export function Menu() {
-    return (
-        <NavigationMenu>
-            <NavigationMenuList>
-                <NavigationMenuItem>
-                    <Link href="/" legacyBehavior passHref>
-                        <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                            <h1 className="font-bold">ChessApp</h1>
-                        </NavigationMenuLink>
-                    </Link>
-                </NavigationMenuItem>
-                <NavigationMenuItem>
-                    <Link href="/contact" legacyBehavior passHref>
-                        <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                            Contact
-                        </NavigationMenuLink>
-                    </Link>
-                </NavigationMenuItem>
-                <NavigationMenuItem>
-                    <Link href="/docs" legacyBehavior passHref>
-                        <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                            Documentation
-                        </NavigationMenuLink>
-                    </Link>
-                </NavigationMenuItem>
-            </NavigationMenuList>
-        </NavigationMenu>
-    )
-}
-
-const ListItem = React.forwardRef<
-    React.ElementRef<"a">,
-    React.ComponentPropsWithoutRef<"a">
->(({ className, title, children, ...props }, ref) => {
-    return (
-        <li>
-            <NavigationMenuLink asChild>
-                <a
-                    ref={ref}
-                    className={cn(
-                        "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
-                        className
-                    )}
-                    {...props}
-                >
-                    <div className="text-sm font-medium leading-none">{title}</div>
-                    <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
-                        {children}
-                    </p>
-                </a>
-            </NavigationMenuLink>
-        </li>
-    )
-})
-ListItem.displayName = "ListItem"
