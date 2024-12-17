@@ -6,12 +6,15 @@ export default function Home() {
             <div className="flex flex-col items-center text-center mt-32">
                 <h1 className="text-6xl font-semibold">
                     Know everything about
-                    <br />
+                    <br/>
                     your next <span className="text-purple-700 text-7xl">chess</span> opponent.
                 </h1>
+                <div className="flex justify-center mt-24">
+                    <SearchBar/>
+                </div>
             </div>
 
-            <SearchBar></SearchBar>
+
         </>
     );
 }
