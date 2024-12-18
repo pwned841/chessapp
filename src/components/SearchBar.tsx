@@ -2,7 +2,6 @@
 'use client';
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Player from "@/types/player";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Link from "next/link";
