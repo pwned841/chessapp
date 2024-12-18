@@ -1,3 +1,4 @@
+// app/api/chess-com/check/route.ts
 import { NextResponse } from 'next/server';
 
 export async function GET(request: Request) {
@@ -15,13 +16,9 @@ export async function GET(request: Request) {
             return NextResponse.json({ exists: false });
         }
 
+        // Only if we can actually get the data, the account exists
         const data = await response.json();
-
-        return NextResponse.json({
-            exists: true,
-            country: data.country,
-            joined: data.joined
-        });
+        return NextResponse.json({ exists: !!data });
 
     } catch (error) {
         console.error('Error checking Chess.com profile:', error);

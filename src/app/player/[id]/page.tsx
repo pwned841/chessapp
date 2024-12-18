@@ -1,4 +1,3 @@
-// app/player/[id]/page.tsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -32,12 +31,16 @@ interface ChesscomProfile {
     username: string;
     exists: boolean;
     checking: boolean;
+    score?: number;
+    country?: string;
+    joined?: string;
 }
 
 const generatePossibleUsernames = (name: string, birthday?: string | null) => {
     if (!name) return [];
 
-    const names = name.toLowerCase().split(' ');
+    const cleanedName = name.toLowerCase().replace(/,/g, '');
+    const names = cleanedName.split(' ');
     const year = birthday && typeof birthday === 'string' ? birthday.substring(0, 4) : '';
     const lastTwoDigitsYear = year ? year.slice(2) : '';
     const possibleNames = new Set<string>();
@@ -48,13 +51,18 @@ const generatePossibleUsernames = (name: string, birthday?: string | null) => {
         const firstInitial = firstName.charAt(0);
         const lastInitial = lastName.charAt(0);
 
-        // Basic combinations
         possibleNames.add(`${firstName}${lastName}`);
         possibleNames.add(`${lastName}${firstName}`);
         possibleNames.add(`${firstName}_${lastName}`);
         possibleNames.add(`${lastName}_${firstName}`);
+
         possibleNames.add(`${firstName}.${lastName}`);
         possibleNames.add(`${lastName}.${firstName}`);
+        for (let i = 1; i <= 9; i++) {
+            possibleNames.add(`${firstName}.${lastName}${i}`);
+            possibleNames.add(`${lastName}.${firstName}${i}`);
+        }
+
         possibleNames.add(`${firstInitial}${lastName}`);
         possibleNames.add(`${firstName}${lastInitial}`);
         possibleNames.add(`${firstInitial}_${lastName}`);
@@ -62,30 +70,27 @@ const generatePossibleUsernames = (name: string, birthday?: string | null) => {
         possibleNames.add(`${firstInitial}.${lastName}`);
         possibleNames.add(`${firstName}.${lastInitial}`);
 
-        // With year combinations
         if (year) {
+            possibleNames.add(`${firstName}${year}`);
+            possibleNames.add(`${lastName}${year}`);
             possibleNames.add(`${firstName}${lastName}${year}`);
             possibleNames.add(`${lastName}${firstName}${year}`);
             possibleNames.add(`${firstName}_${lastName}${year}`);
             possibleNames.add(`${lastName}_${firstName}${year}`);
             possibleNames.add(`${firstName}.${lastName}${year}`);
             possibleNames.add(`${lastName}.${firstName}${year}`);
-            possibleNames.add(`${firstInitial}${lastName}${year}`);
-            possibleNames.add(`${firstName}${lastInitial}${year}`);
 
-            // With last two digits of year
+            possibleNames.add(`${firstName}${lastTwoDigitsYear}`);
+            possibleNames.add(`${lastName}${lastTwoDigitsYear}`);
             possibleNames.add(`${firstName}${lastName}${lastTwoDigitsYear}`);
             possibleNames.add(`${lastName}${firstName}${lastTwoDigitsYear}`);
             possibleNames.add(`${firstName}_${lastName}${lastTwoDigitsYear}`);
             possibleNames.add(`${lastName}_${firstName}${lastTwoDigitsYear}`);
             possibleNames.add(`${firstName}.${lastName}${lastTwoDigitsYear}`);
             possibleNames.add(`${lastName}.${firstName}${lastTwoDigitsYear}`);
-            possibleNames.add(`${firstInitial}${lastName}${lastTwoDigitsYear}`);
-            possibleNames.add(`${firstName}${lastInitial}${lastTwoDigitsYear}`);
         }
 
-        // Number combinations
-        for (let i = 1; i <= 5; i++) {
+        for (let i = 1; i <= 9; i++) {
             possibleNames.add(`${firstName}${lastName}${i}`);
             possibleNames.add(`${lastName}${firstName}${i}`);
             possibleNames.add(`${firstName}_${lastName}${i}`);
@@ -94,36 +99,35 @@ const generatePossibleUsernames = (name: string, birthday?: string | null) => {
             possibleNames.add(`${firstName}${lastInitial}${i}`);
         }
 
-        // Chess-related combinations
-        const chessTerms = ['chess', 'player', 'master'];
-        chessTerms.forEach(term => {
-            possibleNames.add(`${firstName}${term}`);
-            possibleNames.add(`${lastName}${term}`);
-            possibleNames.add(`${term}${firstName}`);
-            possibleNames.add(`${term}${lastName}`);
-            possibleNames.add(`${firstName}${lastName}${term}`);
-            possibleNames.add(`${term}${firstName}${lastName}`);
-        });
-
-        // Initial combinations
-        possibleNames.add(`${firstInitial}${lastInitial}`);
-        possibleNames.add(`${firstInitial}${lastInitial}${year}`);
-        possibleNames.add(`${firstInitial}${lastInitial}${lastTwoDigitsYear}`);
-        for (let i = 1; i <= 5; i++) {
-            possibleNames.add(`${firstInitial}${lastInitial}${i}`);
-        }
-
-        // Reverse combinations
         possibleNames.add(`${lastName}${firstInitial}`);
-        possibleNames.add(`${lastName}${firstInitial}${year}`);
-        possibleNames.add(`${lastName}${firstInitial}${lastTwoDigitsYear}`);
+        if (year) {
+            possibleNames.add(`${lastName}${firstInitial}${year}`);
+            possibleNames.add(`${lastName}${firstInitial}${lastTwoDigitsYear}`);
+        }
     }
 
-    // Full name without spaces
-    possibleNames.add(name.toLowerCase().replace(/\s+/g, ''));
+    possibleNames.add(cleanedName.replace(/\s+/g, ''));
 
-    // Convert Set back to array and return
     return Array.from(possibleNames);
+};
+
+const evaluateProfile = (profile: any, playerCountry: string, playerBirthYear?: string) => {
+    let score = 0;
+
+    if (profile.country?.toLowerCase() === playerCountry.toLowerCase()) {
+        score += 3;
+    }
+
+    if (playerBirthYear && profile.joined) {
+        const joinYear = new Date(profile.joined).getFullYear();
+        const birthYear = parseInt(playerBirthYear);
+
+        if (joinYear < birthYear) {
+            score -= 5;
+        }
+    }
+
+    return score;
 };
 
 export default function PlayerPage() {
@@ -132,15 +136,25 @@ export default function PlayerPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [chesscomProfiles, setChesscomProfiles] = useState<ChesscomProfile[]>([]);
+    const [showNotFound, setShowNotFound] = useState(false);
 
     const checkChesscomProfile = async (username: string) => {
         try {
             const response = await fetch(`/api/chess-com/check?username=${encodeURIComponent(username)}`);
             const data = await response.json();
-            return data.exists;
+
+            if (data.exists) {
+                return {
+                    exists: true,
+                    country: data.country,
+                    joined: data.joined
+                };
+            }
+
+            return {exists: false};
         } catch (error) {
             console.error('Error checking Chess.com profile:', error);
-            return false;
+            return {exists: false};
         }
     };
 
@@ -157,25 +171,6 @@ export default function PlayerPage() {
                 }
 
                 setPlayerInfo(data);
-
-                const usernames = generatePossibleUsernames(data.name, data.birthday);
-                setChesscomProfiles(usernames.map(username => ({
-                    username,
-                    exists: false,
-                    checking: true
-                })));
-
-                for (const username of usernames) {
-                    const exists = await checkChesscomProfile(username);
-                    setChesscomProfiles(prev =>
-                        prev.map(profile =>
-                            profile.username === username
-                                ? { ...profile, exists, checking: false }
-                                : profile
-                        )
-                    );
-                }
-
                 setIsLoading(false);
             } catch (err) {
                 console.error('Error:', err);
@@ -186,6 +181,56 @@ export default function PlayerPage() {
 
         fetchPlayerInfo();
     }, [params.id]);
+
+    useEffect(() => {
+        const checkChesscomAccounts = async () => {
+            if (!playerInfo) return;
+
+            const usernames = generatePossibleUsernames(playerInfo.name, playerInfo.birthday);
+            setChesscomProfiles(usernames.map(username => ({
+                username,
+                exists: false,
+                checking: true
+            })));
+
+            for (const username of usernames) {
+                const profileData = await checkChesscomProfile(username);
+                if (profileData.exists) {
+                    const score = evaluateProfile(
+                        profileData,
+                        playerInfo.country,
+                        playerInfo.birthday
+                    );
+                    setChesscomProfiles(prev =>
+                        prev.map(profile =>
+                            profile.username === username
+                                ? {
+                                    ...profile,
+                                    exists: true,
+                                    checking: false,
+                                    score,
+                                    country: profileData.country,
+                                    joined: profileData.joined
+                                }
+                                : profile
+                        )
+                    );
+                } else {
+                    setChesscomProfiles(prev =>
+                        prev.map(profile =>
+                            profile.username === username
+                                ? {...profile, exists: false, checking: false}
+                                : profile
+                        )
+                    );
+                }
+            }
+        };
+
+        if (playerInfo) {
+            checkChesscomAccounts();
+        }
+    }, [playerInfo]);
 
     if (isLoading) {
         return <div className="p-4 text-center">Loading player information...</div>;
@@ -198,6 +243,9 @@ export default function PlayerPage() {
     if (!playerInfo) {
         return <div className="p-4">No player information found</div>;
     }
+
+    const existingProfiles = chesscomProfiles.filter(profile => profile.exists && !profile.checking);
+    const nonExistingProfiles = chesscomProfiles.filter(profile => !profile.exists && !profile.checking);
 
     return (
         <div className="container mx-auto p-4">
@@ -297,51 +345,100 @@ export default function PlayerPage() {
                             priority
                         />
                     </div>
-                    <h2 className="text-xl font-semibold mb-4">Possible Chess.com Accounts</h2>
-                    <div className="grid gap-3">
-                        {chesscomProfiles.map((profile) => (
-                            <div
-                                key={profile.username}
-                                className={`flex items-center justify-between border p-3 rounded-lg ${
-                                    profile.checking
-                                        ? 'bg-gray-100'
-                                        : profile.exists
-                                            ? 'bg-purple-950-50 border-green-600'
-                                            : 'bg-purple-950-50 border-red-600'
-                                }`}
-                            >
-                                <span className="font-medium">{profile.username}</span>
-                                {profile.checking ? (
-                                    <span className="text-gray-500">Checking...</span>
-                                ) : profile.exists ? (
-                                    <Link
-                                        href={`https://www.chess.com/member/${profile.username}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-green-600 hover:text-green-800 flex items-center gap-2"
+                    <h2 className="text-xl font-semibold mb-4">Chess.com Accounts</h2>
+
+                    <div className="space-y-4">
+                        <div className=" p-4 rounded-lg">
+                            <p>Total Accounts Checked: {chesscomProfiles.filter(p => !p.checking).length}</p>
+                            <p>Found Accounts: {existingProfiles.length}</p>
+                            <p>Not Found: {nonExistingProfiles.length}</p>
+                        </div>
+
+                        {existingProfiles.length > 0 && (
+                            <div className="space-y-3">
+                                <h3 className="font-semibold">Found Accounts:</h3>
+                                {existingProfiles.map((profile) => (
+                                    <div
+                                        key={profile.username}
+                                        className="border border-green-500 p-3 rounded-lg flex items-center justify-between"
                                     >
-                                        View Profile
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            width="16"
-                                            height="16"
-                                            viewBox="0 0 24 24"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            strokeWidth="2"
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
+                                        <div className="flex flex-col">
+                                            <span className="font-medium">{profile.username}</span>
+                                            <span className="text-sm text-gray-500">
+                                           {profile.country && `Country: ${profile.country.split('/').pop()}`}
+                                       </span>
+                                        </div>
+                                        <Link
+                                            href={`https://www.chess.com/member/${profile.username}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-green-600 hover:text-green-800 flex items-center gap-2"
                                         >
-                                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                                            <polyline points="15 3 21 3 21 9"></polyline>
-                                            <line x1="10" y1="14" x2="21" y2="3"></line>
-                                        </svg>
-                                    </Link>
-                                ) : (
-                                    <span className="text-red-500">Account not found</span>
+                                            View Profile
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="16"
+                                                height="16"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth="2"
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                            >
+                                                <path
+                                                    d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                                <polyline points="15 3 21 3 21 9"></polyline>
+                                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                                            </svg>
+                                        </Link>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {nonExistingProfiles.length > 0 && (
+                            <div>
+                                <button
+                                    onClick={() => setShowNotFound(!showNotFound)}
+                                    className="text-gray-600 hover:text-gray-800 flex items-center gap-2"
+                                >
+                                    {showNotFound ? 'Hide' : 'Show'} Non-Existing Accounts ({nonExistingProfiles.length})
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="16"
+                                        height="16"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        className={`transform transition-transform ${showNotFound ? 'rotate-180' : ''}`}
+                                    >
+                                        <polyline points="6 9 12 15 18 9"></polyline>
+                                    </svg>
+                                </button>
+                                {showNotFound && (
+                                    <div className="mt-2 space-y-2">
+                                        {nonExistingProfiles.map((profile) => (
+                                            <div
+                                                key={profile.username}
+                                                className="border border-gray-300 p-2 rounded-lg"
+                                            >
+                                                <span className="text-gray-600">{profile.username}</span>
+                                            </div>
+                                        ))}
+                                    </div>
                                 )}
                             </div>
-                        ))}
+                        )}
+
+                        {chesscomProfiles.some(p => p.checking) && (
+                            <div className="text-center text-gray-500 mt-4">
+                                Checking more accounts...
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
