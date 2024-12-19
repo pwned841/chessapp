@@ -45,7 +45,7 @@ export default function SearchBar() {
                 <input
                     onChange={(e) => setInput(e.target.value)}
                     className="w-full bg-transparent placeholder:text-slate-400 text-slate-700 text-sm border border-slate-200 rounded-md pl-10 pr-3 py-2 transition duration-300 ease focus:outline-none focus:border-purple-500 focus:text-purple-500 hover:border-slate-300 shadow-sm focus:shadow"
-                    placeholder="Ex : Magnus Carlsen"
+                    placeholder="Ex : Carlsen, Magnus"
                     value={input}
                 />
 
@@ -55,14 +55,16 @@ export default function SearchBar() {
                     onClick={handleSearch}
                     disabled={!input} // disable if input is empty
                 >
-                    {  loading && (
-                        <div className="absolute top-0 right-0 bottom-0 left-0 flex items-center justify-center">
-                            <div className="w-6 h-6 border-2 border-t-2 border-purple-500 rounded-full animate-spin"></div>
+                    {loading && (
+                        <div className="absolute top-0 left-[180px] bottom-2 flex items-end justify-center">
+
+                            <div
+                                className="w-6 h-6 border-2 border-t-2 border-purple-500 rounded-full animate-spin">♘
+                            </div>
                         </div>
                     )}
                     Search
                 </button>
-
 
                 {message && (
                     <p className="text-red-500 text-sm mt-2">
@@ -76,7 +78,7 @@ export default function SearchBar() {
                 <div className="w-full max-w-md mx-auto mt-14">
                     <ul>
                         {results.map((user) => (
-                            <li key={user.fideid} className="py-1" >
+                            <li key={user.fideid} className="py-1">
                                 <Link href={`/player/` + user.fideid} className="flex items-center space-x-4 w-full">
                                     <Avatar>
                                         <AvatarFallback>{user.name?.split(' ').map(n => n[0]).join('')}</AvatarFallback>
@@ -90,6 +92,9 @@ export default function SearchBar() {
                 </div>
 
             )}
+            <span className="text-[10px] text-gray-500">
+                Research can be a bit long, please be patient
+            </span>
         </div>
     );
 }

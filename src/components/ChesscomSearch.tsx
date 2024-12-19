@@ -18,7 +18,7 @@ interface ChesscomSearchProps {
     country: string;
 }
 
-export function ChesscomSearch({ name, birthday, country }: ChesscomSearchProps) {
+export function ChesscomSearch({ name, birthday }: ChesscomSearchProps) {
     const [profiles, setProfiles] = useState<Map<string, ChesscomProfile>>(new Map());
     const [stats, setStats] = useState({
         total: 0,
