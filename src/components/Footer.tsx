@@ -5,7 +5,7 @@ export default function Footer() {
 
             <div className="flex justify-center items-center py-4">
                 <p className="text-white text-sm">
-                    © 2024 ChessApp. All rights reserved.
+                    © 2024 ChessApp All rights reserved - Last database update : 2025/01/01
                 </p>
             </div>
         </footer>
