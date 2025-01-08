@@ -19,9 +19,3 @@ export default interface Player {
     birthday?: number;
     flag?: string;
 }
-
-export default interface fuseResult {
-    item: Player;
-    refIndex: string
-
-}
