@@ -92,7 +92,6 @@ export default function SearchBar() {
                     </Button>
                 </div>
 
-                {/* Results dropdown */}
                 {shouldShowDropdown && (
                     <div className="absolute w-full mt-1 rounded-lg border border-purple-300 shadow-lg z-50 bg-purple-950">
                         {error ? (
@@ -141,7 +140,7 @@ export default function SearchBar() {
                         ) : hasSearched ? (
                             <div className="p-4 text-center">
                                 <p className="text-sm text-slate-300 mb-2">
-                                    No players found matching "{input}"
+                                    No players found matching &quot;{input}&quot;
                                 </p>
                                 <p className="text-xs text-purple-400">
                                     Try using fewer characters or check for typos
@@ -151,7 +150,7 @@ export default function SearchBar() {
                                         Search tips:
                                     </p>
                                     <ul className="text-xs text-purple-300 mt-1 space-y-1">
-                                        <li>• Use last name only (e.g. "Carlsen")</li>
+                                        <li>• Use last name only (e.g., &quot;Carlsen&quot;)</li>
                                         <li>• Check spelling carefully</li>
                                         <li>• Try using partial name</li>
                                     </ul>
