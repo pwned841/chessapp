@@ -20,21 +20,21 @@ interface FIDEInfoProps {
 
 export function FIDEInfo({ playerInfo }: FIDEInfoProps) {
     return (
-        <div className="w-full max-w-4xl mx-auto p-6">
+        <div className="w-full max-w-4xl mx-auto p-2 sm:p-6">
             {/* Main header with name and country */}
-            <div className="flex items-center justify-between mb-8 bg-violet-950 p-6 rounded-lg shadow-lg">
-                <div className="flex items-center gap-6">
-                    <h1 className="text-4xl font-bold text-white">{playerInfo.name}</h1>
+            <div className="flex flex-col sm:flex-row items-center sm:justify-between mb-4 sm:mb-8 bg-violet-950 p-4 sm:p-6 rounded-lg shadow-lg">
+                <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 w-full">
+                    <h1 className="text-2xl sm:text-4xl font-bold text-white text-center sm:text-left">{playerInfo.name}</h1>
                     <div className="flex items-center gap-3">
                         <Image
                             src={`https://ratings.fide.com/svg/${playerInfo.country}.svg`}
                             alt={`Flag of ${playerInfo.country}`}
-                            width={48}
-                            height={48}
+                            width={36}
+                            height={36}
                             className="object-contain"
                             priority
                         />
-                        <span className="text-2xl text-violet-200">{playerInfo.country}</span>
+                        <span className="text-xl sm:text-2xl text-violet-200">{playerInfo.country}</span>
                     </div>
                 </div>
             </div>
@@ -46,19 +46,19 @@ export function FIDEInfo({ playerInfo }: FIDEInfoProps) {
                 rel="noopener noreferrer"
                 className="block"
             >
-                <div className="group border border-violet-500 rounded-lg p-6 hover:bg-violet-900 transition-colors duration-200">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-4">
+                <div className="group border border-violet-500 rounded-lg p-4 sm:p-6 hover:bg-violet-900 transition-colors duration-200">
+                    <div className="flex flex-col sm:flex-row items-center sm:justify-between mb-4 gap-4 sm:gap-0">
+                        <div className="flex flex-col sm:flex-row items-center gap-4">
                             <Image
                                 src="https://ratings.fide.com/img/logo/fide-logo.svg"
                                 alt="FIDE Logo"
-                                width={80}
-                                height={80}
+                                width={60}
+                                height={60}
                                 className="object-contain"
                                 priority
                             />
-                            <div>
-                                <h2 className="text-xl font-semibold text-violet-200">FIDE Profile</h2>
+                            <div className="text-center sm:text-left">
+                                <h2 className="text-lg sm:text-xl font-semibold text-violet-200">FIDE Profile</h2>
                                 <p className="text-violet-300">ID: {playerInfo.fideid}</p>
                             </div>
                         </div>
@@ -81,7 +81,7 @@ export function FIDEInfo({ playerInfo }: FIDEInfoProps) {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 text-sm text-violet-300">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm text-violet-300">
                         {playerInfo.title && (
                             <div className="bg-violet-950 bg-opacity-50 p-3 rounded">
                                 <strong className="block text-violet-200">Title:</strong>
