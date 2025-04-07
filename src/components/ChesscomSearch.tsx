@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 
 interface ChesscomSearchProps {
     name: string;
@@ -55,11 +56,11 @@ interface ChesscomPlayer {
             best?: { total_attempts: number, score: number }
         };
         fide?: number;
-        [key: string]: any;
+        [key: string]: unknown;
     };
 }
 
-export function ChesscomSearch({ name, birthday, country }: ChesscomSearchProps) {
+export function ChesscomSearch({ name }: ChesscomSearchProps) {
     const [players, setPlayers] = useState<ChesscomPlayer[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -108,7 +109,7 @@ export function ChesscomSearch({ name, birthday, country }: ChesscomSearchProps)
                 completed: false
             });
             
-            let foundPlayers: ChesscomPlayer[] = [];
+            const foundPlayers: ChesscomPlayer[] = [];
             
             for (let i = 0; i < uniqueCombinations.length; i++) {
                 const combination = uniqueCombinations[i];
@@ -258,7 +259,7 @@ export function ChesscomSearch({ name, birthday, country }: ChesscomSearchProps)
             
             {!isLoading && !error && searchAttempted && players.length === 0 && (
                 <div className="bg-gray-100 rounded-lg p-6 text-center">
-                    <p className="text-gray-600 mb-2">No players found on Chess.com matching "{name}"</p>
+                    <p className="text-gray-600 mb-2">No players found on Chess.com matching &quot;{name}&quot;</p>
                     <a 
                         href={`https://www.chess.com/members?q=${encodeURIComponent(name)}`}
                         target="_blank"
@@ -292,10 +293,12 @@ export function ChesscomSearch({ name, birthday, country }: ChesscomSearchProps)
                                     >
                                         <div className="flex items-center">
                                             {player.avatar ? (
-                                                <img 
+                                                <Image 
                                                     src={player.avatar} 
                                                     alt={player.username} 
-                                                    className="w-10 h-10 rounded-full mr-3"
+                                                    width={40} 
+                                                    height={40} 
+                                                    className="rounded-full mr-3"
                                                     onError={(e) => {
                                                         const target = e.target as HTMLImageElement;
                                                         target.src = "/chess-pawn.svg";
