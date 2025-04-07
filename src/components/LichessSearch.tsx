@@ -24,7 +24,7 @@ interface LichessPlayer {
     seenAt: number;
 }
 
-export function LichessSearch({ name, birthday, country }: LichessSearchProps) {
+export function LichessSearch({ name }: LichessSearchProps) {
     const [players, setPlayers] = useState<LichessPlayer[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -244,7 +244,7 @@ export function LichessSearch({ name, birthday, country }: LichessSearchProps) {
             
             {!isLoading && !error && searchAttempted && players.length === 0 && (
                 <div className="bg-gray-100 rounded-lg p-6 text-center">
-                    <p className="text-gray-600 mb-2">No players found on Lichess matching "{name}"</p>
+                    <p className="text-gray-600 mb-2">No players found on Lichess matching &quot;{name}&quot;</p>
                     <a 
                         href={`https://lichess.org/@/${name.replace(/\s+/g, '')}`} 
                         target="_blank" 

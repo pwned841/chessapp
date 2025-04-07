@@ -37,7 +37,7 @@ export default function PlayerPage() {
 
     useEffect(() => {
         const fetchPlayerInfo = async () => {
-            if (!params.id) return;
+            if (!params?.id) return;
 
             try {
                 const response = await fetch(`/api/players/${params.id}`);
@@ -57,7 +57,7 @@ export default function PlayerPage() {
         };
 
         fetchPlayerInfo();
-    }, [params.id]);
+    }, [params?.id]);
 
     if (isLoading) {
         return (
