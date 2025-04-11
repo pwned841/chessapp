@@ -1,19 +1,21 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { RefreshCcw, Search, Rewind, ChevronLeft, ChevronRight, RotateCcw, ExternalLink, Info, Calendar } from "lucide-react";
+import { RefreshCcw, Search, Rewind, ChevronLeft, ChevronRight, RotateCcw, ExternalLink, Info, Calendar, Loader2 } from "lucide-react";
 import dynamic from 'next/dynamic';
 import { Chess } from 'chess.js';
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import StockfishAnalysis from '@/components/StockfishAnalysis';
+import { useToast } from "@/hooks/use-toast";
 
 const Chessboard = dynamic(
   () => import('react-chessboard').then((mod) => mod.Chessboard),
@@ -47,7 +49,7 @@ export default function RepertoirePage() {
   const [side, setSide] = useState<'white' | 'black'>('white');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [searchProgress, setSearchProgress] = useState<number>(0);
+  const [gamesLoadedCount, setGamesLoadedCount] = useState<number>(0);
   const [formSubmitted, setFormSubmitted] = useState(false);
   
   const [chess, setChess] = useState(new Chess());
@@ -57,10 +59,64 @@ export default function RepertoirePage() {
   const [positionGames, setPositionGames] = useState<Game[]>([]);
   const [dataLoaded, setDataLoaded] = useState(false);
   const [orientation, setOrientation] = useState<'white' | 'black'>('white');
+  const [stockfishEnabled, setStockfishEnabled] = useState<boolean>(true);
+  const [copySuccess, setCopySuccess] = useState<string | null>(null);
+  const [stockfishAnalysisKey, setStockfishAnalysisKey] = useState<number>(0);
 
   const exampleUsernames = {
     lichess: ['DrNykterstein', 'penguingim1', 'RebeccaHarris', 'DanielNaroditsky'],
     chesscom: ['MagnusCarlsen', 'Hikaru', 'GothamChess', 'DanielNaroditsky']
+  };
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { toast, dismiss } = useToast();
+  const loadingToastId = useRef<string | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') {
+        goToPreviousMove();
+      } else if (e.key === 'ArrowRight') {
+        goToNextMove();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [currentPosition, moveHistory]);
+
+  const copyFEN = () => {
+    navigator.clipboard.writeText(chess.fen())
+      .then(() => {
+        setCopySuccess('FEN copied!');
+        setTimeout(() => setCopySuccess(null), 2000);
+      })
+      .catch((err) => {
+        console.error('Failed to copy FEN: ', err);
+      });
+  };
+
+  const copyPGN = () => {
+    const pgn = moveHistory.map((move, index) => {
+      const moveNumber = Math.floor(index / 2) + 1;
+      if (index % 2 === 0) {
+        return `${moveNumber}. ${move}`;
+      } else {
+        return move;
+      }
+    }).join(' ');
+    
+    navigator.clipboard.writeText(pgn)
+      .then(() => {
+        setCopySuccess('PGN copied!');
+        setTimeout(() => setCopySuccess(null), 2000);
+      })
+      .catch((err) => {
+        console.error('Failed to copy PGN: ', err);
+      });
   };
 
   const fetchRepertoire = async (e?: React.FormEvent) => {
@@ -73,13 +129,25 @@ export default function RepertoirePage() {
     
     setIsLoading(true);
     setError(null);
-    setSearchProgress(0);
+    setGamesLoadedCount(0);
     setDataLoaded(false);
     setFormSubmitted(true);
-    setPositionGames([]); 
+    setPositionGames([]);
+    if (loadingToastId.current) {
+      dismiss(loadingToastId.current);
+      loadingToastId.current = null;
+    }
+    
+    const currentLoadingToast = toast({
+      title: "Loading Games",
+      description: `Fetching games for ${username} from ${platform}...`,
+      duration: Infinity,
+      variant: "default",
+    });
+    loadingToastId.current = currentLoadingToast.id;
     
     try {
-      const url = `/api/chess/games?username=${username}&platform=${platform}&color=${side}&max=200`;
+      const url = `/api/chess/games?username=${username}&platform=${platform}&color=${side}&max=-1`;
       
       const response = await fetch(url);
       if (!response.ok) {
@@ -91,61 +159,123 @@ export default function RepertoirePage() {
       
       const decoder = new TextDecoder();
       let data = '';
-      let gamesData: Game[] = [];
-      let partialDataBuffer = '';
+      let gamesProcessed = false;
+      let finalGames: Game[] = [];
       
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         
-        data += decoder.decode(value, { stream: true });
+        const chunkText = decoder.decode(value, { stream: true });
+        data += chunkText;
         
-        if (data.includes('progress:')) {
-          const progressMatch = data.match(/progress:\s*(\d+)/);
-          if (progressMatch && progressMatch[1]) {
-            setSearchProgress(parseInt(progressMatch[1]));
+        const lines = data.split('\n');
+        data = lines.pop() || '';
+        
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          
+          if (line.startsWith('progress:')) {
+            continue; 
           }
-        }
-        
-        if (data.includes('{"games":[')) {
-          const startIndex = data.indexOf('{"games":[');
+          
+          if (line.startsWith('totalGames:')) {
+            const gamesMatch = line.match(/totalGames:\s*(\d+)/);
+            if (gamesMatch && gamesMatch[1]) {
+              setGamesLoadedCount(parseInt(gamesMatch[1]));
+            }
+            continue;
+          }
           
           try {
-            partialDataBuffer = data.substring(startIndex);
-            const parsedData = JSON.parse(partialDataBuffer);
-            if (parsedData.games && parsedData.games.length > 0) {
-              gamesData = parsedData.games;
-              processGames(gamesData);
-              setDataLoaded(true);
+            const jsonData = JSON.parse(line);
+            
+            if (jsonData.games && Array.isArray(jsonData.games)) {
+              const games = jsonData.games;
+              finalGames = games;
+              setGamesLoadedCount(games.length);
+              
+              if (!gamesProcessed && games.length >= 10) {
+                processGames(games);
+                setDataLoaded(true);
+                gamesProcessed = true;
+              } else if (gamesProcessed) {
+                updateGames(games);
+              }
+              
+              if (jsonData.isCompleted) {
+                setIsLoading(false);
+                
+                if (loadingToastId.current) {
+                  dismiss(loadingToastId.current);
+                  loadingToastId.current = null;
+                }
+
+                toast({
+                  title: "Analysis Complete",
+                  description: `Analyzed ${finalGames.length} games successfully.`,
+                  duration: 5000,
+                  variant: "default",
+                });
+              }
             }
-          } catch (e) {}
+          } catch (parseError) {
+            console.error("Error parsing JSON line:", parseError, "Line:", line);
+          }
         }
       }
       
-      const cleanedData = data.replace(/progress:\s*\d+\n/g, '');
-      try {
-        const parsedData = JSON.parse(cleanedData);
-        if (parsedData.error) {
-          throw new Error(parsedData.error);
+      if (isLoading) {
+        setIsLoading(false);
+        if (loadingToastId.current) {
+          dismiss(loadingToastId.current);
+          loadingToastId.current = null;
         }
-        
-        processGames(parsedData.games);
-        setDataLoaded(true);
-      } catch (err) {
-        if (gamesData.length === 0) {
-          throw err;
-        }
+        toast({
+          title: "Analysis Finished",
+          description: `Processed ${finalGames.length} games. Stream ended.`,
+          duration: 5000,
+          variant: "default",
+        });
       }
+      
     } catch (err) {
       console.error("Error retrieving games:", err);
-      setError(err instanceof Error ? err.message : "An error occurred");
-    } finally {
+      setError(err instanceof Error ? err.message : "An error occurred while fetching games.");
       setIsLoading(false);
+      
+      if (loadingToastId.current) {
+        dismiss(loadingToastId.current);
+        loadingToastId.current = null;
+      }
+
+      toast({
+        title: "Error",
+        description: err instanceof Error ? err.message : "An unexpected error occurred.",
+        duration: 5000,
+        variant: "destructive",
+      });
+    } finally {
+      if (isLoading) {
+        setIsLoading(false);
+      }
+      if (loadingToastId.current) {
+         dismiss(loadingToastId.current);
+         loadingToastId.current = null;
+      }
     }
   };
 
+  const updateGames = (games: Game[]) => {
+    const sortedGames = [...games].sort((a, b) => 
+      new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+    
+    setPositionGames(sortedGames);
+    calculateMovesForPosition(sortedGames, moveHistory.slice(0, currentPosition));
+  };
+
   const processGames = (games: Game[]) => {
-    // Sort games by date (newest first)
     const sortedGames = [...games].sort((a, b) => 
       new Date(b.date).getTime() - new Date(a.date).getTime()
     );
@@ -198,7 +328,6 @@ export default function RepertoirePage() {
     setAvailableMoves(movesList);
   };
 
-  // Get only the relevant games and sort by date (newest first)
   const getGamesForCurrentPosition = () => {
     const games = positionGames.filter(game => 
       moveHistory.every((move, index) => game.moves[index] === move)
@@ -305,6 +434,27 @@ export default function RepertoirePage() {
     setDataLoaded(false);
   };
 
+  const handleStockfishMoveSelect = (move: string) => {
+    try {
+      const gameCopy = new Chess(chess.fen());
+      const result = gameCopy.move(move);
+      
+      if (result) {
+        makeMove(result.san);
+      }
+    } catch (err) {
+      console.error("Error executing Stockfish move:", err);
+    }
+  };
+
+  const handleStockfishToggle = () => {
+    const newState = !stockfishEnabled;
+    setStockfishEnabled(newState);
+    if (newState) {
+      setStockfishAnalysisKey(prevKey => prevKey + 1);
+    }
+  };
+
   const moveSequence = moveHistory.map((move, index) => {
     const moveNumber = Math.floor(index / 2) + 1;
     if (index % 2 === 0) {
@@ -322,7 +472,7 @@ export default function RepertoirePage() {
   const playerToMove = isWhiteToPlay ? 'White' : 'Black';
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8" ref={containerRef}>
       <h1 className="text-3xl font-bold mb-2">
         Opening Repertoire Explorer
       </h1>
@@ -402,25 +552,6 @@ export default function RepertoirePage() {
         </CardContent>
       </Card>
 
-      {isLoading && (
-        <Card className="mb-6">
-          <CardContent className="pt-6">
-            <div className="flex flex-col items-center justify-center space-y-4">
-              <div className="flex items-center space-x-2">
-                <span>Retrieving and analyzing games...</span>
-              </div>
-              <Progress value={searchProgress} className="w-full" />
-              <p className="text-sm text-muted-foreground">
-                {dataLoaded ? 
-                  `Loaded ${positionGames.length} games. You can start analyzing while we continue loading.` :
-                  "This operation may take a few minutes depending on the number of games."
-                }
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {error && (
         <Alert variant="destructive" className="mb-6">
           <AlertTitle>Error</AlertTitle>
@@ -428,177 +559,232 @@ export default function RepertoirePage() {
         </Alert>
       )}
 
-      {formSubmitted && dataLoaded && (
-        <div className="space-y-6">
-          <div className="flex flex-wrap items-center gap-2 mb-4">
-            <Badge variant="outline">
-              {platform === 'lichess' ? 'Lichess' : 'Chess.com'}
-            </Badge>
-            <Badge variant="outline">
-              {side === 'white' ? 'White' : 'Black'}
-            </Badge>
-            <Badge variant="outline">
-              {username}
-            </Badge>
-            <Badge variant="outline">
-              {totalGames} games analyzed
-            </Badge>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="lg:row-span-2">
-              <CardHeader>
-                <CardTitle className="flex justify-between items-center">
-                  <span>Opening Repertoire</span>
-                  <div className="flex gap-2">
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="lg:row-span-2">
+            <CardHeader>
+              <CardTitle className="flex justify-between items-center">
+                <span>Opening Repertoire</span>
+                <div className="flex gap-2">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="outline" size="icon" onClick={flipBoard}>
+                          <RotateCcw className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Flip board</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  
+                  {moveHistory.length > 0 && (
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button variant="outline" size="icon" onClick={flipBoard}>
-                            <RotateCcw className="h-4 w-4" />
+                          <Button variant="outline" size="icon" onClick={resetPosition}>
+                            <Rewind className="h-4 w-4" />
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>Flip board</p>
+                          <p>Reset to initial position</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
-                    
-                    {moveHistory.length > 0 && (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button variant="outline" size="icon" onClick={resetPosition}>
-                              <Rewind className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Reset to initial position</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    )}
-                  </div>
-                </CardTitle>
-                {moveSequence && (
+                  )}
+                </div>
+              </CardTitle>
+              {moveSequence && (
+                <div className="flex items-center gap-2">
                   <CardDescription>
                     Move sequence: {moveSequence}
                   </CardDescription>
-                )}
-              </CardHeader>
-              <CardContent>
-                <div className="aspect-square max-h-[600px] w-full">
-                  <Chessboard 
-                    position={chess.fen()} 
-                    onPieceDrop={onDrop}
-                    boardOrientation={orientation}
-                    customBoardStyle={{
-                      borderRadius: '4px',
-                      boxShadow: '0 2px 10px rgba(0, 0, 0, 0.5)',
-                    }}
-                  />
-                </div>
-
-                {/* Navigation controls in a fixed position below the board */}
-                <div className="mt-4 grid grid-cols-3 gap-2 items-center">
-                  <Button
-                    variant="outline"
-                    onClick={goToPreviousMove}
-                    disabled={currentPosition === 0}
-                    className="flex items-center justify-center"
-                  >
-                    <ChevronLeft className="mr-1 h-4 w-4" />
-                    Previous
-                  </Button>
-
-                  <div className="text-center">
-                    {dataLoaded && (
-                      <Badge variant="outline" className="mx-auto">
-                        {currentGames.length} / {totalGames} games ({(positionFrequency * 100).toFixed(1)}%)
-                      </Badge>
+                  <div className="flex gap-1 ml-auto">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="outline" size="sm" className="h-8 px-2" onClick={copyPGN}>
+                            <span className="text-xs">Copy PGN</span>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Copy move sequence to clipboard</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="outline" size="sm" className="h-8 px-2" onClick={copyFEN}>
+                            <span className="text-xs">Copy FEN</span>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Copy position FEN to clipboard</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    {copySuccess && (
+                      <span className="text-xs text-green-500 ml-2 font-medium">{copySuccess}</span>
                     )}
                   </div>
+                </div>
+              )}
+            </CardHeader>
+            <CardContent>
+              <div className="aspect-square max-h-[600px] w-full">
+                <Chessboard 
+                  position={chess.fen()} 
+                  onPieceDrop={onDrop}
+                  boardOrientation={orientation}
+                  customBoardStyle={{
+                    borderRadius: '4px',
+                    boxShadow: '0 2px 10px rgba(0, 0, 0, 0.5)',
+                  }}
+                />
+              </div>
 
-                  <Button
-                    variant="outline"
-                    onClick={goToNextMove}
-                    disabled={currentPosition >= moveHistory.length}
-                    className="flex items-center justify-center"
+              <div className="mt-4 grid grid-cols-3 gap-2 items-center">
+                <Button
+                  variant="outline"
+                  onClick={goToPreviousMove}
+                  disabled={currentPosition === 0}
+                  className="flex items-center justify-center"
+                >
+                  <ChevronLeft className="mr-1 h-4 w-4" />
+                  Previous
+                </Button>
+
+                <div className="text-center">
+                  {dataLoaded && (
+                    <Badge variant="outline" className="mx-auto">
+                      {currentGames.length} / {totalGames} games ({(positionFrequency * 100).toFixed(1)}%)
+                    </Badge>
+                  )}
+                </div>
+
+                <Button
+                  variant="outline"
+                  onClick={goToNextMove}
+                  disabled={currentPosition >= moveHistory.length}
+                  className="flex items-center justify-center"
+                >
+                  Next
+                  <ChevronRight className="ml-1 h-4 w-4" />
+                </Button>
+              </div>
+
+              <div className="mt-6 text-sm text-muted-foreground">
+                <p>
+                  <span className="font-semibold">How to use:</span> Click on available moves in the list or drag pieces on the board to explore the repertoire. The statistics show the success rate of each move from the player's perspective. Use arrow keys (← →) for navigation.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="flex flex-col gap-6">
+            <Card>
+              <CardHeader className="pb-1 flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center">
+                    <span className="mr-auto">Stockfish Analysis</span>
+                  </CardTitle>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-muted-foreground">
+                    {stockfishEnabled ? 'Enabled' : 'Disabled'}
+                  </span>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleStockfishToggle}
+                    className={stockfishEnabled ? "bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-500" : "bg-green-100 dark:bg-green-900/20"}
                   >
-                    Next
-                    <ChevronRight className="ml-1 h-4 w-4" />
+                    {stockfishEnabled ? 'Disable' : 'Enable'}
                   </Button>
                 </div>
-
-                <div className="mt-6 text-sm text-muted-foreground">
-                  <p>
-                    <span className="font-semibold">How to use:</span> Click on available moves in the list or drag pieces on the board to explore the repertoire. The statistics show the success rate of each move from the player's perspective.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <div>Moves Played</div>
-                  <Badge variant={isWhiteToPlay ? "default" : "secondary"} className="text-xs">
-                    {playerToMove} to play
-                  </Badge>
-                </CardTitle>
-                <CardDescription>
-                  Statistics of moves played in this position
-                </CardDescription>
               </CardHeader>
               <CardContent>
-                {!availableMoves.length ? (
-                  <div className="text-center py-4 text-muted-foreground">
-                    No moves available in this position.
-                  </div>
+                {stockfishEnabled ? (
+                  <StockfishAnalysis 
+                    key={stockfishAnalysisKey}
+                    fen={chess.fen()} 
+                    onSelectMove={handleStockfishMoveSelect}
+                  />
                 ) : (
-                  <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
-                    {availableMoves.map((move) => {
-                      const winRate = (move.wins / move.count) * 100;
-                      let colorClass = "";
-                      
-                      if (winRate >= 60) colorClass = "bg-green-600 text-white";
-                      else if (winRate >= 50) colorClass = "bg-green-500 text-white";
-                      else if (winRate >= 40) colorClass = "bg-amber-500 text-white";
-                      else colorClass = "bg-red-500 text-white";
-                      
-                      return (
-                        <div
-                          key={move.san}
-                          className="flex items-center justify-between p-2 rounded-md hover:bg-accent/10 cursor-pointer border border-muted/60 transition-all duration-200 hover:border-accent/60"
-                          onClick={() => makeMove(move.san)}
-                        >
-                          <div className="font-medium">{move.san}</div>
-                          <div className="flex items-center gap-2">
-                            <Badge className={colorClass}>
-                              {winRate.toFixed(0)}%
-                            </Badge>
-                            <Badge variant="outline">
-                              {move.count} game{move.count > 1 ? "s" : ""}
-                            </Badge>
-                            {move.elo > 0 && (
-                              <Badge variant="outline" className="bg-blue-500/10">
-                                {move.elo} ELO
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
+                  <div className="text-center py-2 text-muted-foreground text-sm">
+                    Analysis disabled
                   </div>
                 )}
               </CardContent>
             </Card>
 
+            {formSubmitted && dataLoaded && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <div>Moves Played</div>
+                    <Badge variant={isWhiteToPlay ? "default" : "secondary"} className="text-xs">
+                      {playerToMove} to play
+                    </Badge>
+                  </CardTitle>
+                  <CardDescription>
+                    Statistics of moves played in this position
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {!availableMoves.length ? (
+                    <div className="text-center py-4 text-muted-foreground">
+                      No moves available in this position.
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+                      {availableMoves.map((move) => {
+                        const winRate = (move.wins / move.count) * 100;
+                        let colorClass = "";
+                        
+                        if (winRate >= 60) colorClass = "bg-green-600 text-white";
+                        else if (winRate >= 50) colorClass = "bg-green-500 text-white";
+                        else if (winRate >= 40) colorClass = "bg-amber-500 text-white";
+                        else colorClass = "bg-red-500 text-white";
+                        
+                        return (
+                          <div
+                            key={move.san}
+                            className="flex items-center justify-between p-2 rounded-md hover:bg-accent/10 cursor-pointer border border-muted/60 transition-all duration-200 hover:border-accent/60"
+                            onClick={() => makeMove(move.san)}
+                          >
+                            <div className="font-medium">{move.san}</div>
+                            <div className="flex items-center gap-2">
+                              <Badge className={colorClass}>
+                                {winRate.toFixed(0)}%
+                              </Badge>
+                              <Badge variant="outline">
+                                {move.count} game{move.count > 1 ? "s" : ""}
+                              </Badge>
+                              {move.elo > 0 && (
+                                <Badge variant="outline" className="bg-blue-500/10">
+                                  {move.elo} ELO
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {formSubmitted && dataLoaded && (
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle>Games</CardTitle>
                 <CardDescription>
-                  Games containing this position
+                  Most recent games with this position
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -607,17 +793,17 @@ export default function RepertoirePage() {
                     No games found for this position.
                   </div>
                 ) : (
-                  <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
-                    {currentGames.slice(0, 20).map((game) => {
+                  <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2">
+                    {currentGames.slice(0, 3).map((game) => {
                       const isWin = (game.result === '1-0' && side === 'white') || 
                             (game.result === '0-1' && side === 'black');
                       const isDraw = game.result === '1/2-1/2';
                       const isOngoing = game.result === '*';
                       
                       const resultVariant = isWin ? "default" : 
-                                           isDraw ? "outline" : 
-                                           isOngoing ? "secondary" : "destructive";
-                                           
+                                          isDraw ? "outline" : 
+                                          isOngoing ? "secondary" : "destructive";
+                                          
                       const formattedDate = new Date(game.date).toLocaleDateString(undefined, {
                         year: 'numeric',
                         month: 'short',
@@ -653,17 +839,19 @@ export default function RepertoirePage() {
                         </div>
                       );
                     })}
-                    {currentGames.length > 20 && (
+                    {currentGames.length > 3 && (
                       <div className="text-center text-sm text-muted-foreground py-2">
-                        + {currentGames.length - 20} more games
+                        + {currentGames.length - 3} more games
                       </div>
                     )}
                   </div>
                 )}
               </CardContent>
             </Card>
-          </div>
+          )}
+        </div>
 
+        {formSubmitted && dataLoaded && (
           <Card className="mt-4">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -676,7 +864,7 @@ export default function RepertoirePage() {
                 This tool analyzes a player's chess games to build a comprehensive view of their opening repertoire. 
                 Moves are sorted by frequency, allowing you to see which lines the player prefers. The win rate percentage 
                 indicates how successful the player has been with each move. You can navigate through the move tree by 
-                clicking on moves or using the navigation buttons.
+                clicking on moves or using the arrow keys.
               </p>
               <Separator className="my-4" />
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
@@ -693,16 +881,26 @@ export default function RepertoirePage() {
                   </p>
                 </div>
                 <div>
-                  <h3 className="font-medium mb-1">ELO</h3>
+                  <h3 className="font-medium mb-1">Engine Evaluation</h3>
                   <p className="text-muted-foreground">
-                    Average rating of opponents faced in these games.
+                    Stockfish evaluation shows the best move and score in pawns (e.g., +1.5 means white is ahead by 1.5 pawns). 
+                    Positive values favor White, negative values favor Black. 
+                    "M" followed by a number indicates a forced checkmate in that many moves.
+                    <a href="https://stockfishchess.org/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline ml-1">
+                      Powered by Stockfish.
+                    </a>
                   </p>
                 </div>
               </div>
+              <div className="text-center text-xs text-muted-foreground mt-6">
+                This page is inspired by <a href="https://openingtree.com/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                  OpeningTree.com
+                </a>
+              </div>
             </CardContent>
           </Card>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
