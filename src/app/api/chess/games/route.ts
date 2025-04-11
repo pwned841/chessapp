@@ -18,7 +18,10 @@ export async function GET(request: NextRequest) {
   const username = searchParams.get('username');
   const platform = searchParams.get('platform');
   const color = searchParams.get('color');
-  const max = parseInt(searchParams.get('max') || '200'); // Support for requesting more games
+  // Utiliser un nombre très élevé pour max pour récupérer toutes les parties disponibles
+  // ou permettre une valeur illimitée avec -1
+  const maxParam = searchParams.get('max');
+  const max = maxParam === '-1' ? Infinity : parseInt(maxParam || '1000');
 
   if (!username || !platform || !color) {
     return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
@@ -34,13 +37,13 @@ export async function GET(request: NextRequest) {
   };
 
   // Function to report progress
-  const reportProgress = async (progress: number) => {
-    await writeToStream(`progress: ${progress}\n`);
+  const reportProgress = async (progress: number, totalGames: number) => {
+    await writeToStream(`progress: ${progress}\ntotalGames: ${totalGames}\n`);
   };
 
   // Function to send partial game results
-  const sendPartialResults = async (games: Game[]) => {
-    await writeToStream(`{"games": ${JSON.stringify(games)}}\n`);
+  const sendPartialResults = async (games: Game[], totalGames: number, isCompleted: boolean = false) => {
+    await writeToStream(`{"games": ${JSON.stringify(games)}, "totalGames": ${totalGames}, "isCompleted": ${isCompleted}}\n`);
   };
 
   // Asynchronous processing
@@ -56,7 +59,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Write final results
-      await writeToStream(JSON.stringify({ games }));
+      await sendPartialResults(games, games.length, true);
       await writer.close();
     } catch (error) {
       console.error('Error processing games:', error);
@@ -81,8 +84,8 @@ async function getLichessGames(
   username: string, 
   color: string, 
   maxGames: number,
-  reportProgress: (progress: number) => Promise<void>,
-  sendPartialResults: (games: Game[]) => Promise<void>
+  reportProgress: (progress: number, totalGames: number) => Promise<void>,
+  sendPartialResults: (games: Game[], totalGames: number, isCompleted?: boolean) => Promise<void>
 ): Promise<Game[]> {
   try {
     // Parameters for Lichess API
@@ -134,12 +137,12 @@ async function getLichessGames(
             
             // Report progress periodically
             if (gamesProcessed % 5 === 0 || gamesProcessed === maxGames) {
-              await reportProgress(Math.min(Math.round((gamesProcessed / maxGames) * 100), 99));
+              await reportProgress(Math.min(Math.round((gamesProcessed / maxGames) * 100), 99), gamesProcessed);
             }
             
             // Send partial results every 10 games
             if (games.length >= lastSentCount + 10 || gamesProcessed === maxGames) {
-              await sendPartialResults(games);
+              await sendPartialResults(games, gamesProcessed);
               lastSentCount = games.length;
             }
           } catch (e) {
@@ -149,7 +152,7 @@ async function getLichessGames(
       }
     }
 
-    await reportProgress(100);
+    await reportProgress(100, gamesProcessed);
     return games;
   } catch (error) {
     console.error('Error fetching Lichess games:', error);
@@ -161,8 +164,8 @@ async function getChesscomGames(
   username: string, 
   color: string, 
   maxGames: number,
-  reportProgress: (progress: number) => Promise<void>,
-  sendPartialResults: (games: Game[]) => Promise<void>
+  reportProgress: (progress: number, totalGames: number) => Promise<void>,
+  sendPartialResults: (games: Game[], totalGames: number, isCompleted?: boolean) => Promise<void>
 ): Promise<Game[]> {
   try {
     // Get available archives
@@ -183,7 +186,7 @@ async function getChesscomGames(
     // Process each archive
     for (let i = 0; i < recentArchives.length; i++) {
       const archiveUrl = recentArchives[i];
-      await reportProgress(Math.round((i / recentArchives.length) * 30));
+      await reportProgress(Math.round((i / recentArchives.length) * 30), totalProcessed);
       
       const gameResponse = await fetch(archiveUrl);
       if (gameResponse.ok) {
@@ -203,12 +206,12 @@ async function getChesscomGames(
           
           // Report progress periodically
           if (totalProcessed % 20 === 0) {
-            await reportProgress(30 + Math.min(Math.round((totalProcessed / (monthGames.length * recentArchives.length)) * 69), 69));
+            await reportProgress(30 + Math.min(Math.round((totalProcessed / (monthGames.length * recentArchives.length)) * 69), 69), totalProcessed);
           }
           
           // Send partial results every 10 games
           if (games.length >= lastSentCount + 10) {
-            await sendPartialResults(games);
+            await sendPartialResults(games, totalProcessed);
             lastSentCount = games.length;
           }
           
@@ -220,8 +223,8 @@ async function getChesscomGames(
       if (games.length >= maxGames) break;
     }
     
-    await reportProgress(100);
-    await sendPartialResults(games); // Send final results
+    await reportProgress(100, totalProcessed);
+    await sendPartialResults(games, totalProcessed, true); // Send final results
     return games;
   } catch (error) {
     console.error('Error fetching Chess.com games:', error);
@@ -286,30 +289,139 @@ function parseGameFromChessCom(game: ChesscomGame): Game | null {
     if (!game.pgn || game.pgn.trim() === '') return null;
     
     // Extract moves from the game
-    const chess = new Chess();
-    chess.loadPgn(game.pgn);
-    const moves = chess.history({ verbose: false });
-    
-    // Extract the result
-    let result;
-    if (game.white.result === 'win') result = '1-0';
-    else if (game.black.result === 'win') result = '0-1';
-    else if (game.white.result === 'draw' || game.black.result === 'draw') result = '1/2-1/2';
-    else result = '*';
-    
-    return {
-      id: game.url.split('/').pop() || '',
-      date: new Date(game.end_time * 1000).toISOString(),
-      white: game.white.username,
-      black: game.black.username,
-      result: result,
-      whiteElo: game.white.rating,
-      blackElo: game.black.rating,
-      pgn: game.pgn,
-      moves: moves
-    };
+    try {
+      // 1. Approche simplifiée - Créer une nouvelle instance de Chess et essayer de charger le PGN directement
+      const chess = new Chess();
+      try {
+        chess.loadPgn(game.pgn);
+        const moves = chess.history({ verbose: false });
+        
+        if (moves.length > 0) {
+          return {
+            id: game.url.split('/').pop() || '',
+            date: new Date(game.end_time * 1000).toISOString(),
+            white: game.white.username,
+            black: game.black.username,
+            result: determineResult(game),
+            whiteElo: game.white.rating,
+            blackElo: game.black.rating,
+            pgn: game.pgn,
+            moves: moves
+          };
+        }
+      } catch (pgnError) {
+        // Si l'approche directe échoue, nous essayons la méthode alternative
+      }
+      
+      // 2. Approche alternative - extraire et rejouer la partie à partir de zéro
+      // D'abord, nettoyer le PGN de toutes les annotations et commentaires
+      const cleanedPgn = game.pgn
+        .replace(/\{[^}]*\}/g, ' ') // Commentaires entre accolades
+        .replace(/\[[^\]]*\]/g, ' ') // Métadonnées
+        .replace(/;.*$/gm, ' ')      // Commentaires commençant par ;
+        .replace(/%.*$/gm, ' ')      // Commentaires commençant par %
+        .replace(/\$\d+/g, ' ')      // NAGs comme $1, $2
+        .replace(/\([^()]*\)/g, ' ') // Variantes entre parenthèses
+        .replace(/\s+/g, ' ')        // Normaliser les espaces
+        .trim();
+      
+      // 3. Utiliser une approche basée sur le PGN standard pour extraire les coups
+      const movesText = cleanedPgn
+        .replace(/\d+\.\s+/g, '') // Supprimer les numéros de coup
+        .replace(/\s*(?:1-0|0-1|1\/2-1\/2|\*)\s*$/, ''); // Supprimer le résultat à la fin
+        
+      // 4. Diviser les coups et les jouer dans un nouvel échiquier
+      const movesList = movesText.split(/\s+/).filter(Boolean);
+      const chessParsed = new Chess();
+      
+      for (const moveStr of movesList) {
+        try {
+          // Ignorer les entrées qui ne sont pas des coups valides (nombres isolés, etc.)
+          if (!isValidChessMove(moveStr)) continue;
+          
+          chessParsed.move(moveStr);
+        } catch (moveError) {
+          // Ignorer les erreurs de mouvement silencieusement
+          continue;
+        }
+      }
+      
+      // Vérifier si nous avons réussi à extraire des coups
+      const parsedMoves = chessParsed.history({ verbose: false });
+      if (parsedMoves.length > 0) {
+        return {
+          id: game.url.split('/').pop() || '',
+          date: new Date(game.end_time * 1000).toISOString(),
+          white: game.white.username,
+          black: game.black.username,
+          result: determineResult(game),
+          whiteElo: game.white.rating,
+          blackElo: game.black.rating,
+          pgn: game.pgn,
+          moves: parsedMoves
+        };
+      }
+      
+      // 5. Si les approches ci-dessus échouent, méthode de dernier recours
+      // Rechercher uniquement les coups standards comme e4, Nf3, etc.
+      const simpleMoveRegex = /\b([KQRBNP]?[a-h]?[1-8]?x?[a-h][1-8](?:=[QRBN])?[+#]?|O-O(?:-O)?[+#]?)\b/g;
+      let moveMatch;
+      const chessSimple = new Chess();
+      
+      while ((moveMatch = simpleMoveRegex.exec(cleanedPgn)) !== null) {
+        try {
+          chessSimple.move(moveMatch[1]);
+        } catch (e) {
+          // Ignorer les erreurs
+          continue;
+        }
+      }
+      
+      const simpleMoves = chessSimple.history({ verbose: false });
+      if (simpleMoves.length > 0) {
+        return {
+          id: game.url.split('/').pop() || '',
+          date: new Date(game.end_time * 1000).toISOString(),
+          white: game.white.username,
+          black: game.black.username,
+          result: determineResult(game),
+          whiteElo: game.white.rating,
+          blackElo: game.black.rating,
+          pgn: game.pgn,
+          moves: simpleMoves
+        };
+      }
+      
+      // Si nous arrivons ici, aucune méthode n'a réussi
+      return null;
+    } catch (error) {
+      console.error('Error parsing Chess.com game:', error);
+      return null;
+    }
   } catch (error) {
-    console.error('Error parsing Chess.com game:', error);
+    console.error('General error with Chess.com game:', error);
     return null;
   }
+}
+
+// Fonction pour vérifier si une chaîne ressemble à un coup d'échecs valide
+function isValidChessMove(moveStr: string): boolean {
+  // Ignorer les nombres isolés
+  if (/^\d+$/.test(moveStr)) return false;
+  
+  // Vérifier les coups standards
+  if (/^[KQRBNP]?[a-h]?[1-8]?x?[a-h][1-8](=[QRBN])?[+#]?$/.test(moveStr)) return true;
+  
+  // Vérifier le roque
+  if (/^O-O(-O)?[+#]?$/.test(moveStr)) return true;
+  
+  return false;
+}
+
+// Fonction auxiliaire pour déterminer le résultat de la partie
+function determineResult(game: ChesscomGame): string {
+  if (game.white.result === 'win') return '1-0';
+  if (game.black.result === 'win') return '0-1';
+  if (game.white.result === 'draw' || game.black.result === 'draw') return '1/2-1/2';
+  return '*';
 }
