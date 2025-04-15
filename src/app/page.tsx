@@ -7,6 +7,10 @@ import { Button } from '@/components/ui/button';
 import SearchBar from '@/components/SearchBar';
 import { motion, useInView, useScroll, useTransform, LazyMotion, domAnimation } from 'framer-motion';
 import ClientOnly from '@/components/ClientOnly';
+import dynamic from 'next/dynamic';
+
+// Dynamic import for Chessboard component
+const ChessboardComponent = dynamic(() => import('react-chessboard').then((mod) => mod.Chessboard), { ssr: false });
 
 // Animation variants
 const fadeIn = {
@@ -131,7 +135,7 @@ function AnimatedContent({ heroRef, feature1Ref, feature2Ref, feature3Ref, ctaRe
                 size="lg" 
                 className="bg-purple-700 hover:bg-purple-800 text-white font-medium px-8 py-6 rounded-xl text-lg shadow-lg shadow-purple-300/30 transition-all hover:shadow-purple-400/40 hover:scale-[1.03]"
                 onClick={() => {
-                  document.getElementById('feature1').scrollIntoView({ behavior: 'smooth' });
+                  document.getElementById('feature1')?.scrollIntoView({ behavior: 'smooth' });
                 }}
               >
                 Explore Features
@@ -211,7 +215,11 @@ function AnimatedContent({ heroRef, feature1Ref, feature2Ref, feature3Ref, ctaRe
                 </li>
               </ul>
               
-              <div className="mt-10 flex flex-wrap gap-4">
+              <div className="mb-8">
+                <SearchBar />
+              </div>
+              
+              <div className="mt-10 flex flex-wrap gap-4 items-center">
                 <Link href="/player-search">
                   <Button className="bg-purple-700 hover:bg-purple-800 text-white">
                     Search Players
@@ -221,11 +229,12 @@ function AnimatedContent({ heroRef, feature1Ref, feature2Ref, feature3Ref, ctaRe
                   </Button>
                 </Link>
                 <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
-                    <Image src="/chesscom.png" alt="Chess.com" width={20} height={20} />
+                  {/* Logos encore plus grands */}
+                  <div className="h-12 w-12 rounded-full bg-purple-100 flex items-center justify-center p-1">
+                    <Image src="/chesscom.png" alt="Chess.com" width={36} height={36} />
                   </div>
-                  <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center">
-                    <Image src="/lichessorg.png" alt="Lichess.org" width={20} height={20} />
+                  <div className="h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center p-1">
+                    <Image src="/lichessorg.png" alt="Lichess.org" width={36} height={36} />
                   </div>
                   <span className="text-sm font-medium text-gray-500">Integrated platforms</span>
                 </div>
@@ -249,13 +258,18 @@ function AnimatedContent({ heroRef, feature1Ref, feature2Ref, feature3Ref, ctaRe
               <div className="p-8">
                 <div className="w-full bg-white rounded-xl shadow-md p-6 mb-8 border border-gray-100">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
+                    {/* Ajout de la photo de profil de Magnus Carlsen */}
+                    <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-purple-200">
+                      <Image 
+                        src="/images/magnus_carlsen_fide.jpg" 
+                        alt="Magnus Carlsen" 
+                        width={64} 
+                        height={64} 
+                        className="object-cover"
+                      />
                     </div>
                     <div>
-                      <div className="font-bold text-gray-800">Magnus Carlsen</div>
+                      <div className="font-bold text-gray-800 text-lg">Magnus Carlsen</div>
                       <div className="text-sm text-gray-500">FIDE ID: 1503014</div>
                     </div>
                   </div>
@@ -266,15 +280,40 @@ function AnimatedContent({ heroRef, feature1Ref, feature2Ref, feature3Ref, ctaRe
                     </div>
                     <div className="bg-gray-50 p-3 rounded-lg">
                       <div className="text-sm text-gray-500">Rapid</div>
-                      <div className="font-bold text-gray-800">2820</div>
+                      <div className="font-bold text-gray-800 flex items-center gap-2">
+                        2820
+                        <div className="flex items-center text-green-500">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L10 6.414l-3.293 3.293a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                          </svg>
+                          <span className="text-xs font-medium">+6</span>
+                        </div>
+                      </div>
                     </div>
                     <div className="bg-gray-50 p-3 rounded-lg">
                       <div className="text-sm text-gray-500">Blitz</div>
-                      <div className="font-bold text-gray-800">2886</div>
+                      <div className="font-bold text-gray-800 flex items-center gap-2">
+                        2886
+                        <div className="flex items-center text-red-500">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L10 13.586l3.293-3.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                          <span className="text-xs font-medium">-5</span>
+                        </div>
+                      </div>
                     </div>
                     <div className="bg-gray-50 p-3 rounded-lg">
                       <div className="text-sm text-gray-500">Country</div>
-                      <div className="font-bold text-gray-800">Norway</div>
+                      <div className="font-bold text-gray-800 flex items-center gap-2">
+                        {/* Ajout du drapeau norvégien */}
+                        <Image 
+                          src="https://ratings.fide.com/images/flags/no.svg" 
+                          alt="Norway Flag" 
+                          width={20} 
+                          height={14} 
+                        />
+                        Norway
+                      </div>
                     </div>
                   </div>
                   <div className="border-t border-gray-100 pt-4">
@@ -289,7 +328,7 @@ function AnimatedContent({ heroRef, feature1Ref, feature2Ref, feature3Ref, ctaRe
                     </div>
                   </div>
                 </div>
-                <SearchBar />
+                {/* SearchBar supprimée d'ici */}
               </div>
             </motion.div>
           </div>
@@ -377,67 +416,112 @@ function AnimatedContent({ heroRef, feature1Ref, feature2Ref, feature3Ref, ctaRe
                 </div>
                 <div className="ml-4 text-sm font-medium text-gray-500">Opening Explorer</div>
               </div>
-              <div className="p-8">
-                <div className="grid grid-cols-5 mb-6 gap-1">
-                  <div className="col-span-2">
-                    <div className="bg-gradient-to-r from-blue-100 to-blue-50 p-3 rounded-lg">
-                      <div className="text-sm font-medium text-blue-700">Player</div>
-                      <div className="text-sm text-gray-800">MagnusCarlsen</div>
+              <div className="p-6">
+                {/* Filters similaires à la page repertoire avec les données préchargées */}
+                <div className="grid grid-cols-3 gap-3 mb-5">
+                  <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                    <div className="text-xs text-blue-700 font-medium mb-1">Player</div>
+                    <div className="flex items-center gap-2">
+                      <Image 
+                        src="/chesscom.png" 
+                        alt="Chess.com" 
+                        width={14} 
+                        height={14}
+                        className="rounded-full" 
+                      />
+                      <span className="text-sm font-medium text-gray-800">MagnusCarlsen</span>
                     </div>
                   </div>
-                  <div className="col-span-2">
-                    <div className="bg-gradient-to-r from-blue-100 to-blue-50 p-3 rounded-lg">
-                      <div className="text-sm font-medium text-blue-700">Platform</div>
-                      <div className="text-sm text-gray-800">Chess.com</div>
+                  <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                    <div className="text-xs text-blue-700 font-medium mb-1">Side</div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded-full bg-white border border-gray-200"></div>
+                      <span className="text-sm font-medium text-gray-800">White</span>
                     </div>
                   </div>
-                  <div className="col-span-1">
-                    <div className="bg-gradient-to-r from-blue-100 to-blue-50 p-3 rounded-lg">
-                      <div className="text-sm font-medium text-blue-700">Color</div>
-                      <div className="text-sm text-gray-800">White</div>
+                  <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                    <div className="text-xs text-blue-700 font-medium mb-1">Games</div>
+                    <div className="text-sm font-medium text-gray-800">325 analyzed</div>
+                  </div>
+                </div>
+                
+                {/* Chessboard remplacée par le composant de react-chessboard */}
+                <div className="mb-5 relative overflow-hidden rounded-lg border border-gray-200">
+                  <div className="aspect-square w-full">
+                    {/* Importation dynamique du composant Chessboard */}
+                    <ChessboardComponent />
+                  </div>
+                </div>
+                
+                {/* Analyse des mouvements avec statistiques */}
+                <div className="space-y-2 mb-5">
+                  <div className="text-sm font-medium text-gray-700 mb-1 flex items-center justify-between">
+                    <span>Magnus' Top Moves as White</span>
+                    <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded">White to play</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-2.5 rounded-md hover:bg-blue-50 transition-colors cursor-pointer border border-gray-200">
+                    <div className="flex items-center">
+                      <div className="h-8 w-8 flex items-center justify-center bg-white rounded-full border border-gray-200 font-medium text-gray-800 mr-3">e4</div>
+                      <span className="text-sm">King's Pawn Opening</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="px-2 py-0.5 bg-green-500 text-white text-xs font-medium rounded">71%</div>
+                      <div className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-medium rounded">152 games</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-2.5 rounded-md hover:bg-blue-50 transition-colors cursor-pointer border border-gray-200">
+                    <div className="flex items-center">
+                      <div className="h-8 w-8 flex items-center justify-center bg-white rounded-full border border-gray-200 font-medium text-gray-800 mr-3">d4</div>
+                      <span className="text-sm">Queen's Pawn Opening</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="px-2 py-0.5 bg-green-500 text-white text-xs font-medium rounded">67%</div>
+                      <div className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-medium rounded">86 games</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-2.5 rounded-md hover:bg-blue-50 transition-colors cursor-pointer border border-gray-200">
+                    <div className="flex items-center">
+                      <div className="h-8 w-8 flex items-center justify-center bg-white rounded-full border border-gray-200 font-medium text-gray-800 mr-3">c4</div>
+                      <span className="text-sm">English Opening</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="px-2 py-0.5 bg-amber-500 text-white text-xs font-medium rounded">58%</div>
+                      <div className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-medium rounded">43 games</div>
                     </div>
                   </div>
                 </div>
                 
-                <div className="bg-gray-50 rounded-xl p-4 mb-6">
-                  <div className="grid grid-cols-8 gap-1 mb-3">
-                    {[...Array(8)].map((_, i) => (
-                      <div key={i} className="aspect-square bg-white border border-gray-200 rounded-sm"></div>
-                    ))}
-                    {[...Array(8)].map((_, i) => (
-                      <div key={i+8} className="aspect-square bg-gray-200 border border-gray-200 rounded-sm"></div>
-                    ))}
-                    {[...Array(8)].map((_, i) => (
-                      <div key={i+16} className="aspect-square bg-white border border-gray-200 rounded-sm"></div>
-                    ))}
-                    {[...Array(8)].map((_, i) => (
-                      <div key={i+24} className="aspect-square bg-gray-200 border border-gray-200 rounded-sm"></div>
-                    ))}
+                {/* Analyse Stockfish simplifiée */}
+                <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                  <div className="flex justify-between items-center mb-2">
+                    <div className="text-xs font-medium text-gray-700">Stockfish Analysis</div>
+                    <div className="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded font-medium">Depth 22</div>
                   </div>
-                  <div className="text-sm text-center text-gray-500">Interactive board visualization</div>
-                </div>
-                
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:bg-blue-50 transition-colors cursor-pointer">
-                    <div className="flex items-center">
-                      <div className="h-8 w-8 flex items-center justify-center bg-white rounded-full border border-gray-200 mr-3">e4</div>
-                      <span>King's Pawn Opening</span>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="h-6 w-6 flex items-center justify-center bg-white rounded-full border border-gray-200 font-medium text-xs text-gray-800">e4</div>
+                        <span className="text-sm">+0.35</span>
+                      </div>
+                      <div className="text-xs text-gray-500">Best move</div>
                     </div>
-                    <div className="text-sm font-medium text-gray-700">58%</div>
-                  </div>
-                  <div className="flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:bg-blue-50 transition-colors cursor-pointer">
-                    <div className="flex items-center">
-                      <div className="h-8 w-8 flex items-center justify-center bg-white rounded-full border border-gray-200 mr-3">d4</div>
-                      <span>Queen's Pawn Opening</span>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="h-6 w-6 flex items-center justify-center bg-white rounded-full border border-gray-200 font-medium text-xs text-gray-800">d4</div>
+                        <span className="text-sm">+0.23</span>
+                      </div>
+                      <div className="text-xs text-gray-500">Second best</div>
                     </div>
-                    <div className="text-sm font-medium text-gray-700">27%</div>
-                  </div>
-                  <div className="flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:bg-blue-50 transition-colors cursor-pointer">
-                    <div className="flex items-center">
-                      <div className="h-8 w-8 flex items-center justify-center bg-white rounded-full border border-gray-200 mr-3">c4</div>
-                      <span>English Opening</span>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="h-6 w-6 flex items-center justify-center bg-white rounded-full border border-gray-200 font-medium text-xs text-gray-800">c4</div>
+                        <span className="text-sm">+0.15</span>
+                      </div>
+                      <div className="text-xs text-gray-500">Third best</div>
                     </div>
-                    <div className="text-sm font-medium text-gray-700">15%</div>
                   </div>
                 </div>
               </div>
