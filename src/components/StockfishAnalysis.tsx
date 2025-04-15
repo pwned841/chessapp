@@ -207,6 +207,22 @@ const StockfishAnalysis: React.FC<StockfishAnalysisProps> = ({ fen, onSelectMove
           Aucune analyse disponible
         </div>
       )}
+      
+      <div className="mt-2 pt-2 border-t border-gray-100 flex justify-center">
+        <a 
+          href="https://stockfishchess.org" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="inline-flex items-center px-3 py-1.5 text-sm bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-md transition-colors"
+        >
+          Powered by Stockfish
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-1.5">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1-2-2h6"></path>
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <line x1="10" y1="14" x2="21" y2="3"></line>
+          </svg>
+        </a>
+      </div>
     </div>
   );
 };
