@@ -170,7 +170,7 @@ function AnimatedContent({ heroRef, feature1Ref, feature2Ref, feature3Ref, ctaRe
       <section 
         id="feature1"
         ref={feature1Ref}
-        className="py-32 bg-white relative overflow-hidden"
+        className="py-20 bg-white relative overflow-hidden"
       >
         <div className="absolute inset-0 bg-gradient-to-br from-purple-50/40 to-transparent" />
         
@@ -339,7 +339,7 @@ function AnimatedContent({ heroRef, feature1Ref, feature2Ref, feature3Ref, ctaRe
       <section 
         id="feature2"
         ref={feature2Ref}
-        className="py-32 bg-gray-50 relative overflow-hidden"
+        className="py-20 bg-gray-50 relative overflow-hidden"
       >
         <div className="absolute inset-0 bg-gradient-to-tl from-blue-50/40 to-transparent" />
         
@@ -534,7 +534,7 @@ function AnimatedContent({ heroRef, feature1Ref, feature2Ref, feature3Ref, ctaRe
       <section 
         id="feature3"
         ref={feature3Ref}
-        className="py-32 bg-white relative overflow-hidden"
+        className="py-20 bg-white relative overflow-hidden"
       >
         <div className="absolute inset-0 bg-gradient-to-br from-green-50/40 to-transparent" />
         
@@ -611,73 +611,73 @@ function AnimatedContent({ heroRef, feature1Ref, feature2Ref, feature3Ref, ctaRe
                 </div>
                 <div className="ml-4 text-sm font-medium text-gray-500">Game Analysis</div>
               </div>
-              <div className="p-6">
-                <div className="bg-gray-50 rounded-lg p-3 mb-6">
-                  <div className="flex justify-between items-center mb-2">
-                    <div className="text-sm font-medium text-gray-700">Game Overview</div>
-                    <div className="text-xs text-gray-500">April 10, 2025</div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center">
-                      <div className="h-8 w-8 rounded-full bg-white border border-gray-200 flex items-center justify-center mr-2">W</div>
-                      <div className="text-sm">YourUsername</div>
-                    </div>
-                    <div className="text-sm font-medium">1-0</div>
-                    <div className="flex items-center">
-                      <div className="text-sm">Opponent</div>
-                      <div className="h-8 w-8 rounded-full bg-gray-800 text-white border border-gray-200 flex items-center justify-center ml-2">B</div>
-                    </div>
+              <div className="p-4">
+                <div className="bg-gray-50 rounded-lg p-2 mb-4 flex justify-between items-center text-xs">
+                  <div className="text-gray-700">World Championship 1972 - Game 6</div>
+                  <div className="text-gray-500">Spassky vs Fischer (1-0)</div>
+                </div>
+                
+                {/* Chessboard with the specified FEN position */}
+                <div className="mb-3 relative overflow-hidden rounded-lg border border-gray-200">
+                  <div className="aspect-square w-full">
+                    <ChessboardComponent 
+                      position="5k2/pp4pp/4pp2/1P6/8/P2KP3/5PPb/2B5 w - - 0 30"
+                      boardOrientation="white"
+                    />
                   </div>
                 </div>
                 
-                <div className="mb-6 space-y-3">
-                  <div className="bg-green-50 border border-green-100 rounded-lg p-4 relative overflow-hidden">
-                    <div className="absolute right-0 top-0 bottom-0 w-1.5 bg-green-500"></div>
-                    <div className="text-sm font-medium text-green-800 mb-1">Good move!</div>
-                    <p className="text-sm text-green-700">Your queen sacrifice on move 24 was excellent, leading to a forced checkmate sequence.</p>
+                <div className="border border-gray-100 rounded-lg overflow-hidden mb-3">
+                  <div className="text-xs font-medium text-gray-700 p-2 bg-gray-50 border-b border-gray-100">Move History</div>
+                  <div className="p-2">
+                    <div className="grid grid-cols-4 gap-1 mb-1 text-xs">
+                      <div className="text-gray-500 font-medium">Move</div>
+                      <div className="text-gray-500 font-medium">White</div>
+                      <div className="text-gray-500 font-medium">Black</div>
+                      <div className="text-gray-500 font-medium">Eval</div>
+                    </div>
+                    
+                    <div className="grid grid-cols-4 gap-1 text-xs py-1 border-b border-gray-100">
+                      <div className="text-gray-500">29</div>
+                      <div className="text-gray-800">b5</div>
+                      <div className="text-gray-800 flex items-center">
+                        <span>Bxh2</span>
+                        <div className="w-2 h-2 bg-red-500 rounded-full ml-1"></div>
+                        <span className="text-red-600 ml-1 font-medium">Blunder</span>
+                      </div>
+                      <div className="text-gray-500">-1.4</div>
+                    </div>
+                    
+                    <div className="grid grid-cols-4 gap-1 text-xs py-1">
+                      <div className="text-gray-500">30</div>
+                      <div className="text-gray-800">g3</div>
+                      <div className="text-gray-800">h5</div>
+                      <div className="text-gray-500">-1.6</div>
+                    </div>
                   </div>
                   
-                  <div className="bg-yellow-50 border border-yellow-100 rounded-lg p-4 relative overflow-hidden">
-                    <div className="absolute right-0 top-0 bottom-0 w-1.5 bg-yellow-500"></div>
-                    <div className="text-sm font-medium text-yellow-800 mb-1">Inaccuracy</div>
-                    <p className="text-sm text-yellow-700">On move 18, Nd5 would have been stronger than Bf4, maintaining your advantage.</p>
-                  </div>
-                  
-                  <div className="bg-red-50 border border-red-100 rounded-lg p-4 relative overflow-hidden">
-                    <div className="absolute right-0 top-0 bottom-0 w-1.5 bg-red-500"></div>
-                    <div className="text-sm font-medium text-red-800 mb-1">Missed opportunity</div>
-                    <p className="text-sm text-red-700">You missed a tactical shot on move 12 that would have won material.</p>
+                  <div className="bg-amber-50 p-2 border-t border-amber-100 text-xs">
+                    <div className="font-medium text-amber-800 mb-1">Better move available:</div>
+                    <div className="flex items-center gap-2">
+                      <div className="h-5 w-5 flex items-center justify-center bg-white rounded-full border border-gray-200 font-medium text-xs text-gray-800">a6</div>
+                      <span>would give Black only a slight advantage (-0.2)</span>
+                    </div>
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-3 mb-6">
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <div className="text-sm text-gray-500 mb-1">Accuracy</div>
-                    <div className="text-lg font-bold text-gray-800">86.7%</div>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <div className="text-sm text-gray-500 mb-1">Best Moves</div>
-                    <div className="text-lg font-bold text-gray-800">24/32</div>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <div className="text-sm text-gray-500 mb-1">Mistakes</div>
-                    <div className="text-lg font-bold text-gray-800">2</div>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <div className="text-sm text-gray-500 mb-1">Blunders</div>
-                    <div className="text-lg font-bold text-gray-800">0</div>
-                  </div>
-                </div>
-                
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <div className="text-sm font-medium text-gray-700 mb-2">Game Progress</div>
-                  <div className="h-8 w-full bg-gray-200 rounded-full overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-blue-500 via-green-500 to-green-600 rounded-full" style={{ width: '75%' }}></div>
-                  </div>
-                  <div className="flex justify-between text-xs text-gray-500 mt-1">
-                    <div>Opening</div>
-                    <div>Middlegame</div>
-                    <div>Endgame</div>
+                <div className="bg-gray-50 rounded-lg p-2 text-xs">
+                  <div className="font-medium text-gray-700 mb-1">Engine Analysis</div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1">
+                      <div className="h-5 w-5 flex items-center justify-center bg-white rounded-full border border-gray-200 font-medium text-xs text-gray-800">a6</div>
+                      <span>-0.2</span>
+                      <span className="text-green-600 text-xs ml-1">(Best)</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="h-5 w-5 flex items-center justify-center bg-white rounded-full border border-gray-200 font-medium text-xs text-gray-800">Bxh2</div>
+                      <span>-1.4</span>
+                      <span className="text-red-600 text-xs ml-1">(Played)</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -689,7 +689,7 @@ function AnimatedContent({ heroRef, feature1Ref, feature2Ref, feature3Ref, ctaRe
       {/* Call to Action */}
       <section 
         ref={ctaRef}
-        className="py-24 bg-gradient-to-br from-purple-700 to-indigo-800 text-white relative overflow-hidden"
+        className="py-20 bg-gradient-to-br from-purple-700 to-indigo-800 text-white relative overflow-hidden"
       >
         <div className="absolute inset-0 bg-[url('/chess-pattern.svg')] opacity-5" />
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full blur-3xl opacity-20" />

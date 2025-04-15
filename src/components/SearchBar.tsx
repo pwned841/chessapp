@@ -75,7 +75,7 @@ export default function SearchBar() {
                             value={input}
                             onChange={handleInputChange}
                             onKeyDown={handleKeyDown}
-                            className="w-full bg-transparent placeholder:text-slate-400 text-white text-sm rounded-lg pl-10 pr-4 py-2.5 border border-slate-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all duration-200"
+                            className="w-full bg-white placeholder:text-slate-400 text-slate-900 text-sm rounded-lg pl-10 pr-4 py-2.5 border border-slate-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all duration-200"
                             placeholder="Search players..."
                         />
                     </div>
