@@ -1,59 +1,46 @@
-import type { Metadata } from "next";
-import localFont from "next/font/local";
-import "./globals.css";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
+import './globals.css';
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import Navbar from '@/components/Navbar';
+import { Toaster } from "@/components/ui/toaster";
+import { Analytics } from "@vercel/analytics/react";
+import { AuthProvider } from '@/context/AuthContext';
+import RequireAuth from '@/components/RequireAuth';
 
-const geistSans = localFont({
-    src: "./fonts/GeistVF.woff",
-    variable: "--font-geist-sans",
-    weight: "100 900",
-});
-const geistMono = localFont({
-    src: "./fonts/GeistMonoVF.woff",
-    variable: "--font-geist-mono",
-    weight: "100 900",
-});
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-    title: "ChessApp",
-    description: "Created by @pwned841",
-    icons: {
-        icon: [
-            { url: '/favicon-96x96.png', sizes: '96x96', type: 'image/png' },
-            { url: '/favicon.svg', type: 'image/svg+xml' }
-        ],
-        shortcut: '/favicon.ico',
-        apple: [
-            { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }
-        ]
-    },
-    manifest: '/site.webmanifest',
+  title: 'ChessApp - Know Your Opponent',
+  description: 'Discover everything about your chess opponents across FIDE, Chess.com, and Lichess',
 };
 
 export default function RootLayout({
-                                       children,
-                                   }: Readonly<{
-    children: React.ReactNode;
-}>) {
-    return (
-        <html lang="en" className="dark">
-        <body
-            className={`${geistSans.variable} ${geistMono.variable} antialiased dark:bg-black dark:text-white flex flex-col min-h-screen`}
-        >
-        {/* Navbar with padding */}
-        <header className="px-8 pt-4">
-            <Navbar />
-        </header>
-
-        {/* Main content that grows to fill the space */}
-        <main className="flex-grow px-8">{children}</main>
-
-        {/* Footer always at the bottom */}
-        <footer className="mt-auto">
-            <Footer />
-        </footer>
-        </body>
-        </html>
-    );
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en">
+      <body className={`${inter.className} min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100`}>
+        <AuthProvider>
+          <RequireAuth>
+            <div className="flex flex-col min-h-screen">
+              <Navbar />
+              <main className="flex-grow py-4">
+                {children}
+              </main>
+              <footer className="py-6 px-4 backdrop-blur-lg bg-white/70 border-t border-gray-200">
+                <div className="container mx-auto text-center text-gray-600 text-sm">
+                  <p>© {new Date().getFullYear()} ChessApp. All rights reserved.</p>
+                  <p className="mt-1">A comprehensive chess player search platform.</p>
+                </div>
+              </footer>
+            </div>
+          </RequireAuth>
+          <Toaster />
+          <Analytics />
+        </AuthProvider>
+      </body>
+    </html>
+  );
 }

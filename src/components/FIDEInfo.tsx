@@ -1,114 +1,142 @@
-import Image from 'next/image';
-import Link from "next/link";
+'use client';
+
+import React from 'react';
+
+interface PlayerDetails {
+    fideid: number;
+    name: string;
+    country: string;
+    sex: string;
+    title?: string;
+    w_title?: string;
+    o_title?: string;
+    foa_title?: string;
+    rating?: number;
+    games?: number;
+    k?: number;
+    rapid_rating?: number;
+    rapid_games?: number;
+    rapid_k?: number;
+    blitz_rating?: number;
+    blitz_games?: number;
+    blitz_k?: number;
+    birthday?: string;
+    flag?: string;
+}
 
 interface FIDEInfoProps {
-    playerInfo: {
-        fideid: number;
-        name: string;
-        country: string;
-        sex: string;
-        title?: string;
-        w_title?: string;
-        o_title?: string;
-        foa_title?: string;
-        rating?: number;
-        rapid_rating?: number;
-        blitz_rating?: number;
-        birthday?: string;
-    }
+    playerInfo: PlayerDetails;
 }
 
 export function FIDEInfo({ playerInfo }: FIDEInfoProps) {
+    const formatDate = (dateString?: string) => {
+        if (!dateString) return 'Unknown';
+        return new Date(dateString).toLocaleDateString();
+    };
+
+    const calculateAge = (birthday?: string) => {
+        if (!birthday) return 'Unknown';
+        
+        const birthDate = new Date(birthday);
+        const today = new Date();
+        
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+        
+        return age.toString();
+    };
+
     return (
-        <div className="w-full max-w-4xl mx-auto p-2 sm:p-6">
-            {/* Main header with name and country */}
-            <div className="flex flex-col sm:flex-row items-center sm:justify-between mb-4 sm:mb-8 bg-violet-950 p-4 sm:p-6 rounded-lg shadow-lg">
-                <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 w-full">
-                    <h1 className="text-2xl sm:text-4xl font-bold text-white text-center sm:text-left">{playerInfo.name}</h1>
-                    <div className="flex items-center gap-3">
-                        <Image
-                            src={`https://ratings.fide.com/svg/${playerInfo.country}.svg`}
-                            alt={`Flag of ${playerInfo.country}`}
-                            width={36}
-                            height={36}
-                            className="object-contain"
-                            priority
-                        />
-                        <span className="text-xl sm:text-2xl text-violet-200">{playerInfo.country}</span>
+        <div className="rounded-lg shadow-lg bg-white p-6">
+            <div className="flex flex-col md:flex-row md:items-start justify-between mb-6">
+                <div className="mb-4 md:mb-0">
+                    <h1 className="text-3xl font-bold text-gray-800 flex items-center mb-2">
+                        {playerInfo.title && (
+                            <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded text-sm mr-2">
+                                {playerInfo.title}
+                            </span>
+                        )}
+                        {playerInfo.name}
+                    </h1>
+                    <div className="flex items-center text-gray-600">
+                        <span className="mr-4">FIDE ID: {playerInfo.fideid}</span>
+                        {playerInfo.country && <span className="mr-4">Country: {playerInfo.country}</span>}
+                        {playerInfo.birthday && <span>Age: {calculateAge(playerInfo.birthday)}</span>}
+                    </div>
+                </div>
+                <a 
+                    href={`https://ratings.fide.com/profile/${playerInfo.fideid}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors text-center"
+                >
+                    View FIDE Profile
+                </a>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 p-4 rounded-lg">
+                <div className="bg-white rounded-lg shadow-sm p-4">
+                    <h3 className="font-semibold text-lg text-gray-700 mb-2">Standard</h3>
+                    <div className="text-center">
+                        <span className="text-3xl font-bold text-purple-700">{playerInfo.rating || '—'}</span>
+                        {playerInfo.games && (
+                            <p className="text-sm text-gray-500 mt-1">Games: {playerInfo.games}</p>
+                        )}
+                        {playerInfo.k && (
+                            <p className="text-sm text-gray-500">K-factor: {playerInfo.k}</p>
+                        )}
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-lg shadow-sm p-4">
+                    <h3 className="font-semibold text-lg text-gray-700 mb-2">Rapid</h3>
+                    <div className="text-center">
+                        <span className="text-3xl font-bold text-purple-700">{playerInfo.rapid_rating || '—'}</span>
+                        {playerInfo.rapid_games && (
+                            <p className="text-sm text-gray-500 mt-1">Games: {playerInfo.rapid_games}</p>
+                        )}
+                        {playerInfo.rapid_k && (
+                            <p className="text-sm text-gray-500">K-factor: {playerInfo.rapid_k}</p>
+                        )}
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-lg shadow-sm p-4">
+                    <h3 className="font-semibold text-lg text-gray-700 mb-2">Blitz</h3>
+                    <div className="text-center">
+                        <span className="text-3xl font-bold text-purple-700">{playerInfo.blitz_rating || '—'}</span>
+                        {playerInfo.blitz_games && (
+                            <p className="text-sm text-gray-500 mt-1">Games: {playerInfo.blitz_games}</p>
+                        )}
+                        {playerInfo.blitz_k && (
+                            <p className="text-sm text-gray-500">K-factor: {playerInfo.blitz_k}</p>
+                        )}
                     </div>
                 </div>
             </div>
 
-            {/* FIDE Profile Preview and Link */}
-            <Link
-                href={`https://ratings.fide.com/profile/${playerInfo.fideid}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block"
-            >
-                <div className="group border border-violet-500 rounded-lg p-4 sm:p-6 hover:bg-violet-900 transition-colors duration-200">
-                    <div className="flex flex-col sm:flex-row items-center sm:justify-between mb-4 gap-4 sm:gap-0">
-                        <div className="flex flex-col sm:flex-row items-center gap-4">
-                            <Image
-                                src="https://ratings.fide.com/img/logo/fide-logo.svg"
-                                alt="FIDE Logo"
-                                width={60}
-                                height={60}
-                                className="object-contain"
-                                priority
-                            />
-                            <div className="text-center sm:text-left">
-                                <h2 className="text-lg sm:text-xl font-semibold text-violet-200">FIDE Profile</h2>
-                                <p className="text-violet-300">ID: {playerInfo.fideid}</p>
-                            </div>
-                        </div>
-                        <div className="text-violet-400 group-hover:text-white transition-colors duration-200">
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="24"
-                                height="24"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            >
-                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                                <polyline points="15 3 21 3 21 9"></polyline>
-                                <line x1="10" y1="14" x2="21" y2="3"></line>
-                            </svg>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm text-violet-300">
-                        {playerInfo.title && (
-                            <div className="bg-violet-950 bg-opacity-50 p-3 rounded">
-                                <strong className="block text-violet-200">Title:</strong>
-                                {playerInfo.title}
-                            </div>
-                        )}
-                        {playerInfo.rating && (
-                            <div className="bg-violet-950 bg-opacity-50 p-3 rounded">
-                                <strong className="block text-violet-200">Standard Rating:</strong>
-                                {playerInfo.rating}
-                            </div>
-                        )}
-                        {playerInfo.rapid_rating && (
-                            <div className="bg-violet-950 bg-opacity-50 p-3 rounded">
-                                <strong className="block text-violet-200">Rapid Rating:</strong>
-                                {playerInfo.rapid_rating}
-                            </div>
-                        )}
-                        {playerInfo.blitz_rating && (
-                            <div className="bg-violet-950 bg-opacity-50 p-3 rounded">
-                                <strong className="block text-violet-200">Blitz Rating:</strong>
-                                {playerInfo.blitz_rating}
-                            </div>
-                        )}
-                    </div>
+            <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
+                <div>
+                    {playerInfo.w_title && (
+                        <p className="text-gray-600">Woman title: {playerInfo.w_title}</p>
+                    )}
+                    {playerInfo.o_title && (
+                        <p className="text-gray-600">Organizational title: {playerInfo.o_title}</p>
+                    )}
                 </div>
-            </Link>
+                <div>
+                    {playerInfo.foa_title && (
+                        <p className="text-gray-600">FIDE Office Arena title: {playerInfo.foa_title}</p>
+                    )}
+                    {playerInfo.birthday && (
+                        <p className="text-gray-600">Birthday: {formatDate(playerInfo.birthday)}</p>
+                    )}
+                </div>
+            </div>
         </div>
     );
 }

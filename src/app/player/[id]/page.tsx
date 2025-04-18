@@ -5,6 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { FIDEInfo } from '@/components/FIDEInfo';
 import { ChesscomSearch } from '@/components/ChesscomSearch';
+import { LichessSearch } from '@/components/LichessSearch';
 
 interface PlayerDetails {
     fideid: number;
@@ -36,7 +37,7 @@ export default function PlayerPage() {
 
     useEffect(() => {
         const fetchPlayerInfo = async () => {
-            if (!params.id) return;
+            if (!params?.id) return;
 
             try {
                 const response = await fetch(`/api/players/${params.id}`);
@@ -56,29 +57,59 @@ export default function PlayerPage() {
         };
 
         fetchPlayerInfo();
-    }, [params.id]);
+    }, [params?.id]);
 
     if (isLoading) {
-        return <div className="p-4 text-center">Loading player information...</div>;
+        return (
+            <div className="flex justify-center items-center min-h-[60vh]">
+                <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-purple-500"></div>
+            </div>
+        );
     }
 
     if (error) {
-        return <div className="p-4 text-red-500">Error: {error}</div>;
+        return (
+            <div className="container mx-auto p-8">
+                <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg shadow">
+                    <p className="font-bold">Error</p>
+                    <p>{error}</p>
+                </div>
+            </div>
+        );
     }
 
     if (!playerInfo) {
-        return <div className="p-4">No player information found</div>;
+        return (
+            <div className="container mx-auto p-8">
+                <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-lg shadow">
+                    <p className="font-bold">No data found</p>
+                    <p>No player information found for this ID</p>
+                </div>
+            </div>
+        );
     }
 
     return (
-        <div className="container mx-auto p-4">
-            <div className="backdrop-blur-lg bg-purple-900/2 shadow-md rounded-lg p-6">
+        <div className="container mx-auto p-4 max-w-7xl">
+            <div className="bg-white/90 backdrop-blur-lg shadow-xl rounded-xl p-8 mb-8">
                 <FIDEInfo playerInfo={playerInfo} />
-                <ChesscomSearch
-                    name={playerInfo.name}
-                    birthday={playerInfo.birthday}
-                    country={playerInfo.country}
-                />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <div className="bg-white/90 backdrop-blur-lg shadow-xl rounded-xl p-6">
+                    <ChesscomSearch
+                        name={playerInfo.name}
+                        birthday={playerInfo.birthday}
+                        country={playerInfo.country}
+                    />
+                </div>
+                <div className="bg-white/90 backdrop-blur-lg shadow-xl rounded-xl p-6">
+                    <LichessSearch
+                        name={playerInfo.name}
+                        birthday={playerInfo.birthday}
+                        country={playerInfo.country}
+                    />
+                </div>
             </div>
         </div>
     );
