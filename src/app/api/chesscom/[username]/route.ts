@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
 
+type Params = { params: Promise<{ username: string }> };
+
 export async function GET(
   request: Request,
-  { params }: { params: { username: string } }
+  { params }: Params
 ) {
-  const username = params.username;
+  const { username } = await params;
 
   if (!username) {
     return NextResponse.json({ error: 'Username parameter is required' }, { status: 400 });

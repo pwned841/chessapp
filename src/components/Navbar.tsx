@@ -73,6 +73,12 @@ export default function Navbar() {
                     >
                         Analysis
                     </a>
+                    <Link 
+                        href="/chess-locations" 
+                        className={`px-3 py-2 rounded-md transition-colors text-sm md:text-base ${isActive('/chess-locations')}`}
+                    >
+                        Map
+                    </Link>
                 </div>
                 
                 {/* Auth Buttons */}
