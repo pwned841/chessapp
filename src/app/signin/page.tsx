@@ -54,7 +54,7 @@ export default function SignIn() {
       <div className="w-full max-w-md p-6 bg-white rounded-xl shadow-lg">
         <div className="flex flex-col items-center mb-6">
           <div className="bg-purple-100 p-4 rounded-full mb-4">
-            <Image src="/chess-pawn.svg" alt="ChessApp Logo" width={50} height={50} />
+            <Image src="/chess-knight.svg" alt="ChessApp Logo" width={50} height={50} />
           </div>
           <h1 className="text-2xl font-bold text-purple-800">Welcome Back</h1>
           <p className="text-gray-600 mt-1">Sign in to continue to ChessApp</p>

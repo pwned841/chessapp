@@ -301,7 +301,7 @@ export function ChesscomSearch({ name }: ChesscomSearchProps) {
                                                     className="rounded-full mr-3"
                                                     onError={(e) => {
                                                         const target = e.target as HTMLImageElement;
-                                                        target.src = "/chess-pawn.svg";
+                                                        target.src = "/chess-knight.svg";
                                                     }}
                                                 />
                                             ) : (
