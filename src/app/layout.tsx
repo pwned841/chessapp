@@ -2,6 +2,7 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 import { Toaster } from "@/components/ui/toaster";
 import { Analytics } from "@vercel/analytics/react";
 import { AuthProvider } from '@/context/AuthContext';
@@ -26,15 +27,10 @@ export default function RootLayout({
           <RequireAuth>
             <div className="flex flex-col min-h-screen">
               <Navbar />
-              <main className="flex-grow py-4">
+              <main className="flex-grow pt-4">
                 {children}
               </main>
-              <footer className="py-6 px-4 backdrop-blur-lg bg-white/70 border-t border-gray-200">
-                <div className="container mx-auto text-center text-gray-600 text-sm">
-                  <p>© {new Date().getFullYear()} ChessApp. All rights reserved.</p>
-                  <p className="mt-1">A comprehensive chess player search platform.</p>
-                </div>
-              </footer>
+              <Footer />
             </div>
           </RequireAuth>
           <Toaster />

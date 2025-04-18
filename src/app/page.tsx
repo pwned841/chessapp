@@ -176,18 +176,32 @@ function AnimatedContent({ heroRef, feature1Ref, feature2Ref, feature3Ref, ctaRe
         
         <div className="container mx-auto px-4 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center max-w-6xl mx-auto">
+            {/* Mobile-only header */}
+            <div className="lg:hidden col-span-1 order-1 mb-4">
+              <h2 className="text-4xl font-bold text-gray-800 mb-4">
+                <span className="text-purple-700">01.</span> Player Search
+              </h2>
+              <p className="text-xl text-gray-600 mb-4 leading-relaxed">
+                Access our extensive database of <span className="font-semibold">1.5 million FIDE players</span> to find comprehensive profiles and statistics.
+              </p>
+            </div>
+
             <motion.div
               initial="hidden"
               animate={feature1InView ? "visible" : "hidden"}
               variants={slideInLeft}
-              className="order-2 lg:order-1"
+              className="order-3 lg:order-1"
             >
-              <h2 className="text-4xl font-bold text-gray-800 mb-6">
-                <span className="text-purple-700">01.</span> Player Search
-              </h2>
-              <p className="text-xl text-gray-600 mb-6 leading-relaxed">
-                Access our extensive database of <span className="font-semibold">1.5 million FIDE players</span> to find comprehensive profiles and statistics.
-              </p>
+              {/* Desktop-only header */}
+              <div className="hidden lg:block">
+                <h2 className="text-4xl font-bold text-gray-800 mb-6">
+                  <span className="text-purple-700">01.</span> Player Search
+                </h2>
+                <p className="text-xl text-gray-600 mb-6 leading-relaxed">
+                  Access our extensive database of <span className="font-semibold">1.5 million FIDE players</span> to find comprehensive profiles and statistics.
+                </p>
+              </div>
+              
               <ul className="space-y-4 mb-8">
                 <li className="flex items-start">
                   <div className="flex-shrink-0 h-6 w-6 rounded-full bg-purple-100 flex items-center justify-center mt-1">
@@ -245,7 +259,7 @@ function AnimatedContent({ heroRef, feature1Ref, feature2Ref, feature3Ref, ctaRe
               initial="hidden"
               animate={feature1InView ? "visible" : "hidden"}
               variants={slideInRight}
-              className="order-1 lg:order-2 shadow-2xl rounded-2xl overflow-hidden bg-white border border-gray-100"
+              className="order-2 shadow-2xl rounded-2xl overflow-hidden bg-white border border-gray-100"
             >
               <div className="bg-gray-50 border-b border-gray-100 p-4 flex items-center">
                 <div className="flex gap-2">
@@ -328,7 +342,6 @@ function AnimatedContent({ heroRef, feature1Ref, feature2Ref, feature3Ref, ctaRe
                     </div>
                   </div>
                 </div>
-                {/* SearchBar supprimée d'ici */}
               </div>
             </motion.div>
           </div>
@@ -540,18 +553,32 @@ function AnimatedContent({ heroRef, feature1Ref, feature2Ref, feature3Ref, ctaRe
         
         <div className="container mx-auto px-4 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center max-w-6xl mx-auto">
+            {/* Mobile-only header */}
+            <div className="lg:hidden col-span-1 order-1 mb-4">
+              <h2 className="text-4xl font-bold text-gray-800 mb-4">
+                <span className="text-green-700">03.</span> Game Analysis
+              </h2>
+              <p className="text-xl text-gray-600 mb-4 leading-relaxed">
+                Get detailed insights into your chess games with our <span className="font-semibold">comprehensive analysis</span> that highlights improvements and provides statistics.
+              </p>
+            </div>
+
             <motion.div
               initial="hidden"
               animate={feature3InView ? "visible" : "hidden"}
               variants={slideInLeft}
-              className="order-2 lg:order-1"
+              className="order-3 lg:order-1"
             >
-              <h2 className="text-4xl font-bold text-gray-800 mb-6">
-                <span className="text-green-700">03.</span> Game Analysis
-              </h2>
-              <p className="text-xl text-gray-600 mb-6 leading-relaxed">
-                Get detailed insights into your chess games with our <span className="font-semibold">comprehensive analysis</span> that highlights improvements and provides statistics.
-              </p>
+              {/* Desktop-only header */}
+              <div className="hidden lg:block">
+                <h2 className="text-4xl font-bold text-gray-800 mb-6">
+                  <span className="text-green-700">03.</span> Game Analysis
+                </h2>
+                <p className="text-xl text-gray-600 mb-6 leading-relaxed">
+                  Get detailed insights into your chess games with our <span className="font-semibold">comprehensive analysis</span> that highlights improvements and provides statistics.
+                </p>
+              </div>
+              
               <ul className="space-y-4 mb-8">
                 <li className="flex items-start">
                   <div className="flex-shrink-0 h-6 w-6 rounded-full bg-green-100 flex items-center justify-center mt-1">
@@ -601,7 +628,7 @@ function AnimatedContent({ heroRef, feature1Ref, feature2Ref, feature3Ref, ctaRe
               initial="hidden"
               animate={feature3InView ? "visible" : "hidden"}
               variants={slideInRight}
-              className="order-1 lg:order-2 shadow-2xl rounded-2xl overflow-hidden bg-white border border-gray-100"
+              className="order-2 shadow-2xl rounded-2xl overflow-hidden bg-white border border-gray-100"
             >
               <div className="bg-gray-50 border-b border-gray-100 p-4 flex items-center">
                 <div className="flex gap-2">

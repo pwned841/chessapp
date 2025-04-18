@@ -64,7 +64,7 @@ export default function SignUp() {
       <div className="w-full max-w-md p-6 bg-white rounded-xl shadow-lg">
         <div className="flex flex-col items-center mb-6">
           <div className="bg-purple-100 p-4 rounded-full mb-4">
-            <Image src="/chess-pawn.svg" alt="ChessApp Logo" width={50} height={50} />
+            <Image src="/chess-knight.svg" alt="ChessApp Logo" width={50} height={50} />
           </div>
           <h1 className="text-2xl font-bold text-purple-800">Create Account</h1>
           <p className="text-gray-600 mt-1">Join ChessAnalyzer and unlock all features</p>
