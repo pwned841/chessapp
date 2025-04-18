@@ -5,7 +5,7 @@ export default function Loading() {
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
             <div className="relative w-16 h-16 animate-pulse mb-4">
                 <Image 
-                    src="/chess-pawn.svg" 
+                    src="/chess-knight.svg" 
                     alt="ChessApp Logo" 
                     fill 
                     className="opacity-70"

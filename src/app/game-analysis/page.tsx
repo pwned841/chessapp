@@ -11,7 +11,7 @@ export default function GameAnalysisPage() {
                     <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
                         <div className="mb-8 relative w-28 h-28 flex items-center justify-center bg-purple-100 rounded-full">
                             <Image 
-                                src="/chess-pawn.svg" 
+                                src="/chess-knight.svg" 
                                 alt="Chess Piece" 
                                 width={60} 
                                 height={60} 
