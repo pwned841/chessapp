@@ -43,7 +43,7 @@
     "react-chessboard": "^4.3.2",
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.54.1",
-    "react-leaflet": "^5.0.0",
+    "react-leaflet": "^4.2.1",
     "stockfish": "^16.0.0",
     "stockfish-nnue.wasm": "^1.0.0-1946a675.smolnet",
     "stockfish.js": "^10.0.2",
