@@ -82,22 +82,55 @@ export function ChesscomSearch({ name }: ChesscomSearchProps) {
             setSearchAttempted(true);
             setPlayers([]);
             
-            const nameParts = name.trim().split(/\s+/);
-            const firstName = nameParts[0];
-            const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : '';
+            // Clean up the name - properly handle the 'Last Name, First Name' format
+            let cleanName = name.trim();
+            // Remove trailing commas first
+            cleanName = cleanName.replace(/,\s*$/, '');
             
+            // Handle 'Last Name, First Name' format
+            const commaMatch = cleanName.match(/^([^,]+),\s*(.+)$/);
+            let firstName, lastName;
+            
+            if (commaMatch) {
+                // If in format "Last, First"
+                lastName = commaMatch[1].trim();
+                firstName = commaMatch[2].trim();
+            } else {
+                // If in regular format "First Last"
+                const nameParts = cleanName.split(/\s+/);
+                firstName = nameParts[0];
+                lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : '';
+            }
+            
+            // Generate more combinations for better searching
             const nameCombinations = [
-                name.replace(/\s+/g, ''),
+                // No separators
                 `${firstName}${lastName}`,
+                `${lastName}${firstName}`,
                 firstName,
                 lastName,
                 `${firstName.charAt(0)}${lastName}`,
+                `${lastName}${firstName.charAt(0)}`,
+                `${firstName}c`,
+                `c${firstName}`,
+                
+                // With separators
                 `${firstName}_${lastName}`,
-                `${lastName}${firstName}`,
+                `${lastName}_${firstName}`,
                 `${firstName}-${lastName}`,
+                `${lastName}-${firstName}`,
+                `${firstName}.${lastName}`,
+                `${lastName}.${firstName}`,
+                
+                // Lowercase variations
                 `${firstName.toLowerCase()}${lastName.toLowerCase()}`,
+                `${lastName.toLowerCase()}${firstName.toLowerCase()}`,
                 `${firstName.toLowerCase()}_${lastName.toLowerCase()}`,
-                `${firstName.charAt(0).toLowerCase()}${lastName.toLowerCase()}`
+                `${lastName.toLowerCase()}_${firstName.toLowerCase()}`,
+                `${firstName.toLowerCase()}-${lastName.toLowerCase()}`,
+                `${firstName.toLowerCase()}.${lastName.toLowerCase()}`,
+                `${firstName.charAt(0).toLowerCase()}${lastName.toLowerCase()}`,
+                `${lastName.toLowerCase()}${firstName.charAt(0).toLowerCase()}`
             ].filter(n => n);
             
             const uniqueCombinations = [...new Set(nameCombinations)];

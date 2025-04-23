@@ -8,34 +8,25 @@ const prisma = new PrismaClient({
 });
 
 export async function GET(request: Request) {
+    const { searchParams } = new URL(request.url);
+    const query = searchParams.get('query') || '';
+    const type = searchParams.get('type') || 'standard'; // standard, rapid, blitz
+    
+    if (!query || query.length < 3) {
+        return NextResponse.json({ 
+            players: [],
+            message: "Please provide at least 3 characters to search"
+        }, { status: 200 });
+    }
+
     try {
-        const { searchParams } = new URL(request.url);
-        const query = searchParams.get('q') || '';
-        const limit = parseInt(searchParams.get('limit') || '5');
-
-        console.log(`Recherche de joueurs avec la requête: "${query}"`);
-
-        if (!query || query.length < 2) {
-            return NextResponse.json({ results: [] });
-        }
-
-        // Recherche avec conditions plus flexibles
+        // Search for players by name
         const players = await prisma.player.findMany({
             where: {
-                OR: [
-                    // Recherche dans le champ name
-                    {
-                        name: {
-                            contains: query,
-                            mode: 'insensitive',
-                        },
-                        NOT: {
-                            name: null,
-                        },
-                    },
-                    // Vous pourriez ajouter d'autres conditions de recherche si nécessaire
-                    // Par exemple, rechercher dans d'autres champs si vous le souhaitez
-                ],
+                name: {
+                    contains: query,
+                    mode: 'insensitive' // Case-insensitive search
+                }
             },
             select: {
                 fideid: true,
@@ -43,27 +34,34 @@ export async function GET(request: Request) {
                 country: true,
                 title: true,
                 rating: true,
+                rapid_rating: true,
+                blitz_rating: true,
+                games: true,
+                rapid_games: true,
+                blitz_games: true,
+                k: true,
+                rapid_k: true,
+                blitz_k: true,
+                flag: true
             },
-            orderBy: {
-                rating: 'desc',
-            },
-            take: limit,
+            orderBy: type === 'rapid' 
+                ? { rapid_rating: 'desc' } 
+                : type === 'blitz' 
+                    ? { blitz_rating: 'desc' }
+                    : { rating: 'desc' },
+            take: 10 // Limit results
         });
 
-        console.log(`Résultats trouvés pour "${query}": ${players.length}`);
+        return NextResponse.json({ 
+            players,
+            type
+        });
 
-        // Si aucun résultat, on affiche un message pour faciliter le débogage
-        if (players.length === 0) {
-            console.log(`Aucun joueur trouvé avec la requête: "${query}"`);
-        }
-
-        return NextResponse.json({ results: players });
-
-    } catch (error) {
-        console.error('Search error:', error);
-        return NextResponse.json(
-            { error: 'Search failed', details: error instanceof Error ? error.message : 'Unknown error' },
-            { status: 500 }
-        );
+    } catch (error: any) {
+        console.error('Error searching players:', error);
+        return NextResponse.json({ 
+            error: 'Failed to search players',
+            message: error.message 
+        }, { status: 500 });
     }
 }

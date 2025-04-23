@@ -106,14 +106,6 @@ export default function Navbar() {
                 
                 {/* Desktop Navigation */}
                 <div className="hidden md:flex space-x-2">
-                    {/* Home link is always accessible */}
-                    <Link 
-                        href="/" 
-                        className={`px-3 py-2 rounded-md transition-colors text-sm md:text-base ${isActive('/')}`}
-                    >
-                        Home
-                    </Link>
-                    
                     {/* Protected links - visible but redirect to signin if clicked while not logged in */}
                     <a 
                         href="#"
@@ -136,6 +128,12 @@ export default function Navbar() {
                     >
                         Analysis
                     </a>
+                    <Link 
+                        href="/elo-calculator" 
+                        className={`px-3 py-2 rounded-md transition-colors text-sm md:text-base ${isActive('/elo-calculator')}`}
+                    >
+                        Elo Calculator
+                    </Link>
                     <Link 
                         href="/chess-locations" 
                         className={`px-3 py-2 rounded-md transition-colors text-sm md:text-base ${isActive('/chess-locations')}`}
@@ -228,15 +226,6 @@ export default function Navbar() {
                     >
                         <div className="flex flex-col p-4">
                             <motion.div variants={itemVariants}>
-                                <Link 
-                                    href="/" 
-                                    className={`px-3 py-3 rounded-md text-base block ${isActive('/')}`}
-                                >
-                                    Home
-                                </Link>
-                            </motion.div>
-                            
-                            <motion.div variants={itemVariants}>
                                 <a 
                                     href="#"
                                     onClick={(e) => handleProtectedLink(e, '/player-search')} 
@@ -264,6 +253,15 @@ export default function Navbar() {
                                 >
                                     Analysis
                                 </a>
+                            </motion.div>
+                            
+                            <motion.div variants={itemVariants}>
+                                <Link 
+                                    href="/elo-calculator" 
+                                    className={`px-3 py-3 rounded-md text-base block ${isActive('/elo-calculator')}`}
+                                >
+                                    Elo Calculator
+                                </Link>
                             </motion.div>
                             
                             <motion.div variants={itemVariants}>
