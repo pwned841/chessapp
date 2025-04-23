@@ -46,28 +46,61 @@ export function LichessSearch({ name }: LichessSearchProps) {
             setSearchAttempted(true);
             setPlayers([]);
             
-            // Clean up the name - remove titles and extra spaces
-            let cleanName = name.replace(/\([^)]*\)/g, '').trim();
-            // Remove titles like "GM", "IM", etc. from the start of the name
-            cleanName = cleanName.replace(/^(GM|IM|FM|CM|WGM|WIM|WFM|WCM)\s+/i, '');
+            // Clean up the name - remove titles and other unnecessary elements
+            let cleanName = name.trim();
+            cleanName = cleanName.replace(/\([^)]*\)/g, '').trim();
+            // Remove trailing commas
+            cleanName = cleanName.replace(/,\s*$/, '');
             
-            // Generate different name combinations to try
-            const nameParts = cleanName.trim().split(/\s+/);
-            const firstName = nameParts[0];
-            const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : '';
+            // Handle 'Last Name, First Name' format
+            const commaMatch = cleanName.match(/^([^,]+),\s*(.+)$/);
+            let firstName, lastName;
+            
+            if (commaMatch) {
+                // Format: "Last, First"
+                lastName = commaMatch[1].trim();
+                firstName = commaMatch[2].trim();
+                // Remove titles after properly identifying first/last name
+                firstName = firstName.replace(/^(GM|IM|FM|CM|WGM|WIM|WFM|WCM)\s+/i, '');
+            } else {
+                // Format: "First Last"
+                cleanName = cleanName.replace(/^(GM|IM|FM|CM|WGM|WIM|WFM|WCM)\s+/i, '');
+                const nameParts = cleanName.trim().split(/\s+/);
+                firstName = nameParts[0];
+                lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : '';
+            }
             
             // List of different combinations to try (from most specific to least)
             const nameCombinations = [
-                cleanName.replace(/\s+/g, ''),           // FullNameNoSpaces
-                `${firstName}${lastName}`,                // FirstNameLastName
-                firstName,                                // FirstName
-                lastName,                                 // LastName (if exists)
-                `${firstName.charAt(0)}${lastName}`,      // InitialLastName
-                `${firstName}_${lastName}`,               // FirstName_LastName
-                `${lastName}${firstName}`,                // LastNameFirstName
-                `${firstName}-${lastName}`,               // FirstName-LastName
+                // No separators
+                cleanName.replace(/\s+/g, ''),          // FullNameNoSpaces
+                `${firstName}${lastName}`,               // FirstNameLastName
+                `${lastName}${firstName}`,               // LastNameFirstName
+                firstName,                               // FirstName
+                lastName,                                // LastName (if exists)
+                `${firstName.charAt(0)}${lastName}`,     // InitialLastName
+                `${lastName}${firstName.charAt(0)}`,     // LastNameInitial
+                `${firstName}l`,                         // First name + l (for "lichess")
+                `l${firstName}`,                         // l + first name
+                
+                // With separators
+                `${firstName}_${lastName}`,              // FirstName_LastName
+                `${lastName}_${firstName}`,              // LastName_FirstName
+                `${firstName}-${lastName}`,              // FirstName-LastName
+                `${lastName}-${firstName}`,              // LastName-FirstName
+                `${firstName}.${lastName}`,              // FirstName.LastName
+                `${lastName}.${firstName}`,              // LastName.FirstName
+                
+                // Lowercase variations
                 `${firstName.toLowerCase()}${lastName.toLowerCase()}`, // firstnamelastname
-                `${firstName.toLowerCase()}_${lastName.toLowerCase()}` // firstname_lastname
+                `${lastName.toLowerCase()}${firstName.toLowerCase()}`, // lastnamefirstname
+                `${firstName.toLowerCase()}_${lastName.toLowerCase()}`, // firstname_lastname
+                `${lastName.toLowerCase()}_${firstName.toLowerCase()}`, // lastname_firstname
+                `${firstName.toLowerCase()}-${lastName.toLowerCase()}`, // firstname-lastname
+                `${lastName.toLowerCase()}-${firstName.toLowerCase()}`, // lastname-firstname
+                `${firstName.toLowerCase()}.${lastName.toLowerCase()}`, // firstname.lastname
+                `${firstName.charAt(0).toLowerCase()}${lastName.toLowerCase()}`, // flastname
+                `${lastName.toLowerCase()}${firstName.charAt(0).toLowerCase()}`, // lastnamef
             ].filter(n => n); // Remove empty strings
             
             // Remove duplicates
@@ -89,7 +122,12 @@ export function LichessSearch({ name }: LichessSearchProps) {
                     currentVariation: 'Searching Lichess API'
                 }));
                 
-                const response = await fetch(`/api/lichess/search?name=${encodeURIComponent(cleanName)}`);
+                // Use a clean version of the name without commas for the batch API call
+                const batchSearchName = commaMatch ? 
+                    `${firstName} ${lastName}` : 
+                    cleanName;
+                
+                const response = await fetch(`/api/lichess/search?name=${encodeURIComponent(batchSearchName)}`);
                 
                 if (response.ok) {
                     const data = await response.json();
