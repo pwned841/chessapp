@@ -20,6 +20,7 @@ export async function GET(request: Request) {
     }
 
     try {
+        console.log('Recherche FIDE :', query);
         // Search for players by name
         const players = await prisma.player.findMany({
             where: {
@@ -51,6 +52,7 @@ export async function GET(request: Request) {
                     : { rating: 'desc' },
             take: 10 // Limit results
         });
+        console.log('Résultats trouvés :', players);
 
         return NextResponse.json({ 
             players,

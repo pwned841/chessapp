@@ -8,6 +8,7 @@ export async function middleware(request: NextRequest) {
     // Allow access to public endpoints
     const publicApiPaths = [
       '/api/chess-locations',
+      '/api/forgot-password',
     ];
     
     // Check if current path is a public endpoint
