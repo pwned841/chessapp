@@ -20,6 +20,19 @@ npm install
 3. Run the development server:
 
 ```bash
+# Clone the repository
+git clone https://github.com/pwned841/chessapp.git
+
+# Navigate to the folder
+cd chessapp
+
+# Create a .env file and configure your database connection 
+Example: DATABASE_URL=your-database-url
+
+# Install dependencies
+npm install
+
+# Start the project in development mode
 npm run dev
 ```
 
