@@ -45,19 +45,20 @@ export default function Home() {
   const feature1Ref = useRef(null);
   const feature2Ref = useRef(null);
   const feature3Ref = useRef(null);
+  const feature4Ref = useRef(null); // Ajout pour Elo Calculator
   const ctaRef = useRef(null);
   
   return (
     <div className="flex flex-col overflow-hidden">
-      {/* Content with animations rendered only client-side */}
+      {/* Hero section */}
       <ClientOnly>
         <LazyMotion features={domAnimation}>
-          {/* Render AnimatedContent directly */}
           <AnimatedContent 
             heroRef={heroRef}
             feature1Ref={feature1Ref}
             feature2Ref={feature2Ref}
             feature3Ref={feature3Ref}
+            feature4Ref={feature4Ref}
             ctaRef={ctaRef}
           />
         </LazyMotion>
@@ -67,11 +68,12 @@ export default function Home() {
 }
 
 // Component with all animations, loaded only client-side
-function AnimatedContent({ heroRef, feature1Ref, feature2Ref, feature3Ref, ctaRef }) {
+function AnimatedContent({ heroRef, feature1Ref, feature2Ref, feature3Ref, feature4Ref, ctaRef }) {
   const { scrollY } = useScroll();
   const feature1InView = useInView(feature1Ref, { once: true, amount: 0.3 });
   const feature2InView = useInView(feature2Ref, { once: true, amount: 0.3 });
   const feature3InView = useInView(feature3Ref, { once: true, amount: 0.3 });
+  const feature4InView = useInView(feature4Ref, { once: true, amount: 0.3 });
   const ctaInView = useInView(ctaRef, { once: true, amount: 0.3 });
 
   // Parallax effect for hero section
@@ -165,7 +167,37 @@ function AnimatedContent({ heroRef, feature1Ref, feature2Ref, feature3Ref, ctaRe
           </div>
         </div>
       </motion.section>
-      
+
+      {/* Feature navigation bar (sous le Hero, avant les features) */}
+      <div className="w-full flex justify-center py-6 bg-white border-b border-gray-100 z-20 sticky top-0">
+        <div className="flex flex-wrap justify-center gap-3 px-2">
+          <button
+            className="px-4 py-2 rounded-lg text-sm font-medium text-purple-700 hover:bg-purple-50 transition"
+            onClick={() => document.getElementById('feature1')?.scrollIntoView({ behavior: 'smooth' })}
+          >
+            Player Search
+          </button>
+          <button
+            className="px-4 py-2 rounded-lg text-sm font-medium text-blue-700 hover:bg-blue-50 transition"
+            onClick={() => document.getElementById('feature2')?.scrollIntoView({ behavior: 'smooth' })}
+          >
+            Opening Explorer
+          </button>
+          <button
+            className="px-4 py-2 rounded-lg text-sm font-medium text-green-700 hover:bg-green-50 transition"
+            onClick={() => document.getElementById('feature3')?.scrollIntoView({ behavior: 'smooth' })}
+          >
+            Game Analysis
+          </button>
+          <button
+            className="px-4 py-2 rounded-lg text-sm font-medium text-amber-700 hover:bg-amber-50 transition"
+            onClick={() => document.getElementById('feature4')?.scrollIntoView({ behavior: 'smooth' })}
+          >
+            Elo Calculator
+          </button>
+        </div>
+      </div>
+
       {/* Feature 1: Player Search */}
       <section 
         id="feature1"
@@ -214,7 +246,7 @@ function AnimatedContent({ heroRef, feature1Ref, feature2Ref, feature3Ref, ctaRe
                 <li className="flex items-start">
                   <div className="flex-shrink-0 h-6 w-6 rounded-full bg-purple-100 flex items-center justify-center mt-1">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-purple-700" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l-3.293 3.293a1 1 0 01-1.414 0z" clipRule="evenodd" />
                     </svg>
                   </div>
                   <span className="ml-3 text-gray-700">Discover their Chess.com and Lichess.org accounts</span>
@@ -298,7 +330,7 @@ function AnimatedContent({ heroRef, feature1Ref, feature2Ref, feature3Ref, ctaRe
                         2820
                         <div className="flex items-center text-green-500">
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L10 6.414l-3.293 3.293a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                            <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L10 6.414l-3.293 3.293a1 1 0 01-1.414 0z" clipRule="evenodd" />
                           </svg>
                           <span className="text-xs font-medium">+6</span>
                         </div>
@@ -713,6 +745,128 @@ function AnimatedContent({ heroRef, feature1Ref, feature2Ref, feature3Ref, ctaRe
         </div>
       </section>
       
+      {/* Feature 4: Elo Calculator */}
+      <section 
+        id="feature4"
+        ref={feature4Ref}
+        className="py-20 bg-white relative overflow-hidden"
+      >
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center max-w-6xl mx-auto">
+            <motion.div
+              initial="hidden"
+              animate={feature4InView ? "visible" : "hidden"}
+              variants={slideInLeft}
+              className="order-1"
+            >
+              <h2 className="text-4xl font-bold text-gray-800 mb-6">
+                <span className="text-amber-700">04.</span> Elo Calculator
+              </h2>
+              <p className="text-xl text-gray-600 mb-6 leading-relaxed">
+                Simulate Elo rating changes for any chess match. See how a win, draw, or loss impacts your rating instantly!
+              </p>
+              <ul className="space-y-4 mb-8">
+                <li className="flex items-start">
+                  <div className="flex-shrink-0 h-6 w-6 rounded-full bg-amber-100 flex items-center justify-center mt-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-amber-700" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <span className="ml-3 text-gray-700">Calculate Elo change for any result</span>
+                </li>
+                <li className="flex items-start">
+                  <div className="flex-shrink-0 h-6 w-6 rounded-full bg-amber-100 flex items-center justify-center mt-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-amber-700" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <span className="ml-3 text-gray-700">Visualize rating swings for top players</span>
+                </li>
+                <li className="flex items-start">
+                  <div className="flex-shrink-0 h-6 w-6 rounded-full bg-amber-100 flex items-center justify-center mt-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-amber-700" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <span className="ml-3 text-gray-700">Understand how Elo works in real scenarios</span>
+                </li>
+              </ul>
+              <div className="mt-10 flex flex-wrap gap-4">
+                <Link href="/elo-calculator">
+                  <Button className="bg-amber-700 hover:bg-amber-800 text-white">
+                    Try Elo Calculator
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                  </Button>
+                </Link>
+              </div>
+            </motion.div>
+            <motion.div
+              initial="hidden"
+              animate={feature4InView ? "visible" : "hidden"}
+              variants={slideInRight}
+              className="order-2 shadow-2xl rounded-2xl overflow-hidden bg-white border border-amber-100"
+            >
+              <div className="bg-amber-50 border-b border-amber-100 p-4 flex items-center">
+                <div className="flex gap-2">
+                  <div className="w-3 h-3 bg-red-400 rounded-full"></div>
+                  <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
+                  <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+                </div>
+                <div className="ml-4 text-sm font-medium text-amber-700">Elo Calculator</div>
+              </div>
+              <div className="p-8">
+                {/* Faux match Hikaru vs Magnus */}
+                <div className="flex flex-col md:flex-row items-center justify-between gap-8 mb-8">
+                  <div className="flex flex-col items-center">
+                    <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-amber-300 mb-2">
+                      <Image src="/images/hikaru_nakamura_fide.png" alt="Hikaru Nakamura" width={80} height={80} className="object-cover" />
+                    </div>
+                    <div className="font-bold text-gray-800 text-lg">Hikaru Nakamura</div>
+                    <div className="text-sm text-gray-500">Elo: 2789</div>
+                  </div>
+                  <div className="text-3xl font-bold text-amber-700">vs</div>
+                  <div className="flex flex-col items-center">
+                    <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-amber-300 mb-2">
+                      <Image src="/images/magnus_carlsen_fide.jpg" alt="Magnus Carlsen" width={80} height={80} className="object-cover" />
+                    </div>
+                    <div className="font-bold text-gray-800 text-lg">Magnus Carlsen</div>
+                    <div className="text-sm text-gray-500">Elo: 2830</div>
+                  </div>
+                </div>
+                {/* Résultat Elo simulé */}
+                <div className="bg-amber-100 rounded-lg p-6 text-center mb-4">
+                  <div className="text-lg font-semibold text-amber-800 mb-2">Simulated Elo Change</div>
+                  <div className="flex flex-col md:flex-row items-center justify-center gap-8">
+                    <div className="flex flex-col items-center">
+                      <span className="text-gray-700 font-medium">If Hikaru wins:</span>
+                      <span className="text-2xl font-bold text-green-700">+6.2</span>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <span className="text-gray-700 font-medium">If Draw:</span>
+                      <span className="text-2xl font-bold text-blue-700">+0.1 / -0.1</span>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <span className="text-gray-700 font-medium">If Magnus wins:</span>
+                      <span className="text-2xl font-bold text-red-700">-5.9</span>
+                    </div>
+                  </div>
+                  <div className="mt-4 text-xs text-gray-600">(K=10, FIDE formula, values for illustration)</div>
+                </div>
+                <div className="flex justify-center">
+                  <Link href="/elo-calculator">
+                    <Button className="bg-amber-700 hover:bg-amber-800 text-white px-8 py-4 text-lg rounded-xl shadow-lg transition-all">
+                      Try with your own ratings
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+      
       {/* Call to Action */}
       <section 
         ref={ctaRef}
@@ -756,6 +910,11 @@ function AnimatedContent({ heroRef, feature1Ref, feature2Ref, feature3Ref, ctaRe
               <Image src="/chesscom.png" alt="Chess.com" width={120} height={30} className="opacity-70 hover:opacity-100 transition-opacity" />
               <Image src="/lichessorg.png" alt="Lichess.org" width={120} height={30} className="opacity-70 hover:opacity-100 transition-opacity" />
               <div className="text-2xl font-bold text-white opacity-70 hover:opacity-100 transition-opacity">FIDE</div>
+            </div>
+
+            <div className="mt-10 text-xs text-purple-200">
+              <b>ChessApp</b> is an <a href="https://github.com/pwned841/chessapp" className="underline hover:text-white" target="_blank" rel="noopener noreferrer">open-source project</a> &nbsp;|&nbsp; <span>⭐️ <b>0</b> stars</span><br />
+              Found a bug or want to suggest a feature? <a href="https://github.com/pwned841/chessapp/issues" className="underline hover:text-white" target="_blank" rel="noopener noreferrer">Open an issue</a>
             </div>
           </motion.div>
         </div>

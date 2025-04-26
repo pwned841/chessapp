@@ -122,7 +122,12 @@ export default function PlayerPage() {
 
     const formatDate = (dateString: string | null) => {
         if (!dateString) return 'N/A';
+        // If only a year is provided (e.g. '1990'), just return the year
+        if (/^\d{4}$/.test(dateString)) {
+            return dateString;
+        }
         const date = new Date(dateString);
+        if (isNaN(date.getTime())) return dateString; // fallback: show as-is
         return date.toLocaleDateString('en-US', { 
             year: 'numeric', 
             month: 'short', 

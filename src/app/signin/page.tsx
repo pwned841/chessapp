@@ -75,7 +75,7 @@ export default function SignIn() {
           <div className="space-y-2">
             <div className="flex justify-between items-center">
               <Label htmlFor="password" className="text-gray-700">Password</Label>
-              <a href="#" className="text-sm text-purple-600 hover:text-purple-800">Forgot password?</a>
+              <a href="/forgot-password" className="text-sm text-purple-600 hover:text-purple-800">Forgot password?</a>
             </div>
             <Input
               id="password"
@@ -83,8 +83,10 @@ export default function SignIn() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              minLength={6}
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             />
+            <p className="text-xs text-gray-500">Password must be at least 6 characters</p>
           </div>
           <Button 
             type="submit" 

@@ -45,12 +45,12 @@ export default function SearchBar() {
         setOnlinePlatforms(null);
 
         try {
-            const res = await fetch(`/api/players/search?q=${encodeURIComponent(input)}&exact=true`);
+            const res = await fetch(`/api/players/search?query=${encodeURIComponent(input)}&exact=true`);
             const data = await res.json();
-            setResults(data.results || []);
+            setResults(data.players || []);
             
             // If no FIDE players found, check online platforms
-            if (!data.results || data.results.length === 0) {
+            if (!data.players || data.players.length === 0) {
                 checkOnlinePlatforms(input);
             }
         } catch (err) {

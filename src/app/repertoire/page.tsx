@@ -16,22 +16,11 @@ import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import StockfishAnalysis from '@/components/StockfishAnalysis';
 import { useToast } from "@/hooks/use-toast";
-import { motion } from 'framer-motion';
 
 const Chessboard = dynamic(
   () => import('react-chessboard').then((mod) => mod.Chessboard),
   { ssr: false }
 );
-
-// Animation variants
-const fadeIn = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { 
-    opacity: 1, 
-    y: 0,
-    transition: { duration: 0.5 }
-  }
-};
 
 interface MoveStats {
   san: string;
@@ -65,6 +54,7 @@ export default function RepertoirePage() {
   
   const [chess, setChess] = useState(new Chess());
   const [moveHistory, setMoveHistory] = useState<string[]>([]);
+  const moveHistoryRef = useRef<string[]>([]);
   const [currentPosition, setCurrentPosition] = useState(0);
   const [availableMoves, setAvailableMoves] = useState<MoveStats[]>([]);
   const [positionGames, setPositionGames] = useState<Game[]>([]);
@@ -84,6 +74,14 @@ export default function RepertoirePage() {
   const loadingToastId = useRef<string | null>(null);
 
   useEffect(() => {
+    // Show a warning toast on mount
+    toast({
+      title: "Experimental Page",
+      description: "This page is experimental and may have issues. If you encounter any problems, please open an issue on GitHub.",
+      variant: "destructive",
+      duration: 9000
+    });
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowLeft') {
         goToPreviousMove();
@@ -98,6 +96,10 @@ export default function RepertoirePage() {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [currentPosition, moveHistory]);
+
+  useEffect(() => {
+    moveHistoryRef.current = moveHistory;
+  }, [moveHistory]);
 
   const copyFEN = () => {
     navigator.clipboard.writeText(chess.fen())
@@ -283,7 +285,10 @@ export default function RepertoirePage() {
     );
     
     setPositionGames(sortedGames);
-    calculateMovesForPosition(sortedGames, moveHistory.slice(0, currentPosition));
+    calculateMovesForPosition(
+      sortedGames.filter(game => moveHistoryRef.current.every((move, idx) => game.moves[idx] === move)),
+      moveHistoryRef.current.slice(0, moveHistoryRef.current.length)
+    );
   };
 
   const processGames = (games: Game[]) => {
@@ -352,8 +357,9 @@ export default function RepertoirePage() {
       const result = gameCopy.move(move);
       
       if (result) {
-        setChess(gameCopy);
         const newHistory = [...moveHistory.slice(0, currentPosition), move];
+        moveHistoryRef.current = newHistory;
+        setChess(gameCopy);
         setMoveHistory(newHistory);
         setCurrentPosition(newHistory.length);
         
@@ -451,7 +457,17 @@ export default function RepertoirePage() {
       const result = gameCopy.move(move);
       
       if (result) {
-        makeMove(result.san);
+        const newHistory = [...moveHistory.slice(0, currentPosition), result.san];
+        moveHistoryRef.current = newHistory;
+        setChess(gameCopy);
+        setMoveHistory(newHistory);
+        setCurrentPosition(newHistory.length);
+        
+        const relevantGames = positionGames.filter(game => 
+          newHistory.every((move, index) => game.moves[index] === move)
+        );
+        
+        calculateMovesForPosition(relevantGames, newHistory);
       }
     } catch (err) {
       console.error("Error executing Stockfish move:", err);
@@ -483,409 +499,300 @@ export default function RepertoirePage() {
   const playerToMove = isWhiteToPlay ? 'White' : 'Black';
 
   return (
-    <div className="bg-white min-h-screen">
-      <div className="container mx-auto px-4 py-12">
-        {/* New centered header section */}
-        <motion.div 
-          initial="hidden"
-          animate="visible"
-          variants={fadeIn}
-          className="text-center mb-12"
-        >
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-gray-800">
-            Opening Repertoire Explorer
-          </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Analyze opening repertoires from Lichess and Chess.com players and learn from their favorite lines
-          </p>
-        </motion.div>
-        
-        {/* Redesigned search card */}
-        <motion.div 
-          initial="hidden"
-          animate="visible"
-          variants={fadeIn}
-          className="max-w-4xl mx-auto mb-16"
-        >
-          <Card className="border-slate-200 shadow-md">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-2xl font-bold text-center">Repertoire Analysis</CardTitle>
-              <CardDescription className="text-center">
-                Analyze a player's opening repertoire based on their online games
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={fetchRepertoire} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="username">Username</Label>
-                    <Input
-                      id="username"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      placeholder="Enter username"
-                      className="w-full bg-white placeholder:text-slate-400 text-slate-900 text-sm rounded-lg py-2.5 border border-slate-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all duration-200"
-                      required
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Examples: {platform === 'lichess' 
-                        ? exampleUsernames.lichess.join(', ') 
-                        : exampleUsernames.chesscom.join(', ')}
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="platform">Platform</Label>
-                    <Select 
-                      value={platform} 
-                      onValueChange={(value: 'lichess' | 'chesscom') => setPlatform(value)}
-                    >
-                      <SelectTrigger className="w-full bg-white text-slate-900 text-sm rounded-lg py-2.5 border border-slate-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all duration-200">
-                        <SelectValue placeholder="Choose platform" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="lichess">Lichess</SelectItem>
-                        <SelectItem value="chesscom">Chess.com</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="side">Side</Label>
-                    <Select 
-                      value={side} 
-                      onValueChange={(value: 'white' | 'black') => setSide(value)}
-                    >
-                      <SelectTrigger className="w-full bg-white text-slate-900 text-sm rounded-lg py-2.5 border border-slate-200 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all duration-200">
-                        <SelectValue placeholder="Choose side" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="white">White</SelectItem>
-                        <SelectItem value="black">Black</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="flex justify-center gap-2 pt-2">
-                  {formSubmitted && (
-                    <Button type="button" variant="outline" onClick={resetForm} className="px-6">
-                      <RefreshCcw className="mr-2 h-4 w-4" />
-                      Reset
-                    </Button>
-                  )}
-                  <Button 
-                    type="submit" 
-                    disabled={isLoading}
-                    className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-2.5 rounded-lg"
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Analyzing...
-                      </>
-                    ) : (
-                      <>
-                        <Search className="mr-2 h-4 w-4" />
-                        Analyze Repertoire
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </motion.div>
+    <div className="container mx-auto px-4 py-8" ref={containerRef}>
+      <h1 className="text-3xl font-bold mb-2">
+        Opening Repertoire Explorer
+      </h1>
+      <p className="text-muted-foreground mb-6">
+        Analyze opening repertoires from Lichess and Chess.com players
+      </p>
+      
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Repertoire Analysis</CardTitle>
+          <CardDescription>
+            Analyze a player's opening repertoire based on their online games
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={fetchRepertoire} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Enter username"
+                  required
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Examples: {platform === 'lichess' 
+                    ? exampleUsernames.lichess.join(', ') 
+                    : exampleUsernames.chesscom.join(', ')}
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="platform">Platform</Label>
+                <Select 
+                  value={platform} 
+                  onValueChange={(value: 'lichess' | 'chesscom') => setPlatform(value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose platform" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="lichess">Lichess</SelectItem>
+                    <SelectItem value="chesscom">Chess.com</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="side">Side</Label>
+                <Select 
+                  value={side} 
+                  onValueChange={(value: 'white' | 'black') => setSide(value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose side" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="white">White</SelectItem>
+                    <SelectItem value="black">Black</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              {formSubmitted && (
+                <Button type="button" variant="outline" onClick={resetForm}>
+                  <RefreshCcw className="mr-2 h-4 w-4" />
+                  Reset
+                </Button>
+              )}
+              <Button type="submit" disabled={isLoading}>
+                <Search className="mr-2 h-4 w-4" />
+                {isLoading ? 'Searching...' : 'Analyze'}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
 
-        {error && (
-          <Alert variant="destructive" className="mb-6 max-w-4xl mx-auto">
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
+      {error && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="lg:row-span-2">
-              <CardHeader>
-                <CardTitle className="flex justify-between items-center">
-                  <span>Opening Repertoire</span>
-                  <div className="flex gap-2">
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="lg:row-span-2">
+            <CardHeader>
+              <CardTitle className="flex justify-between items-center">
+                <span>Opening Repertoire</span>
+                <div className="flex gap-2">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="outline" size="icon" onClick={flipBoard}>
+                          <RotateCcw className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Flip board</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  
+                  {moveHistory.length > 0 && (
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button variant="outline" size="icon" onClick={flipBoard}>
-                            <RotateCcw className="h-4 w-4" />
+                          <Button variant="outline" size="icon" onClick={resetPosition}>
+                            <Rewind className="h-4 w-4" />
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>Flip board</p>
+                          <p>Reset to initial position</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
-                    
-                    {moveHistory.length > 0 && (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button variant="outline" size="icon" onClick={resetPosition}>
-                              <Rewind className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Reset to initial position</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                  )}
+                </div>
+              </CardTitle>
+              {moveSequence && (
+                <div className="flex items-center gap-2">
+                  <CardDescription>
+                    Move sequence: {moveSequence}
+                  </CardDescription>
+                  <div className="flex gap-1 ml-auto">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="outline" size="sm" className="h-8 px-2" onClick={copyPGN}>
+                            <span className="text-xs">Copy PGN</span>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Copy move sequence to clipboard</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button variant="outline" size="sm" className="h-8 px-2" onClick={copyFEN}>
+                            <span className="text-xs">Copy FEN</span>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Copy position FEN to clipboard</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    {copySuccess && (
+                      <span className="text-xs text-green-500 ml-2 font-medium">{copySuccess}</span>
                     )}
                   </div>
-                </CardTitle>
-                {moveSequence && (
-                  <div className="flex items-center gap-2">
-                    <CardDescription>
-                      Move sequence: {moveSequence}
-                    </CardDescription>
-                    <div className="flex gap-1 ml-auto">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button variant="outline" size="sm" className="h-8 px-2" onClick={copyPGN}>
-                              <span className="text-xs">Copy PGN</span>
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Copy move sequence to clipboard</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button variant="outline" size="sm" className="h-8 px-2" onClick={copyFEN}>
-                              <span className="text-xs">Copy FEN</span>
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Copy position FEN to clipboard</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                      {copySuccess && (
-                        <span className="text-xs text-green-500 ml-2 font-medium">{copySuccess}</span>
-                      )}
-                    </div>
-                  </div>
+                </div>
+              )}
+            </CardHeader>
+            <CardContent>
+              <div className="aspect-square max-h-[600px] w-full">
+                <Chessboard 
+                  position={chess.fen()} 
+                  onPieceDrop={onDrop}
+                  boardOrientation={orientation}
+                  customBoardStyle={{
+                    borderRadius: '4px',
+                    boxShadow: '0 2px 10px rgba(0, 0, 0, 0.5)',
+                  }}
+                />
+              </div>
+            </CardContent>
+
+            <div className="grid grid-cols-3 gap-2 items-center">
+              <Button
+                variant="outline"
+                onClick={goToPreviousMove}
+                disabled={currentPosition === 0}
+                className="flex items-center justify-center"
+              >
+                <ChevronLeft className="mr-1 h-4 w-4" />
+                Previous
+              </Button>
+
+              <div className="text-center">
+                {dataLoaded && (
+                  <Badge variant="outline" className="mx-auto">
+                    {currentGames.length} / {totalGames} games ({(positionFrequency * 100).toFixed(1)}%)
+                  </Badge>
                 )}
+              </div>
+
+              <Button
+                variant="outline"
+                onClick={goToNextMove}
+                disabled={currentPosition >= moveHistory.length}
+                className="flex items-center justify-center"
+              >
+                Next
+                <ChevronRight className="ml-1 h-4 w-4" />
+              </Button>
+            </div>
+          </Card>
+
+          <div className="flex flex-col gap-6">
+            <Card>
+              <CardHeader className="pb-1 flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center">
+                    <span className="mr-auto">Stockfish Analysis</span>
+                  </CardTitle>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-muted-foreground">
+                    {stockfishEnabled ? 'Enabled' : 'Disabled'}
+                  </span>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleStockfishToggle}
+                    className={stockfishEnabled ? "bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-500" : "bg-green-100 dark:bg-green-900/20"}
+                  >
+                    {stockfishEnabled ? 'Disable' : 'Enable'}
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="aspect-square max-h-[600px] w-full">
-                  <Chessboard 
-                    position={chess.fen()} 
-                    onPieceDrop={onDrop}
-                    boardOrientation={orientation}
-                    customBoardStyle={{
-                      borderRadius: '4px',
-                      boxShadow: '0 2px 10px rgba(0, 0, 0, 0.5)',
-                    }}
+                {stockfishEnabled ? (
+                  <StockfishAnalysis 
+                    key={stockfishAnalysisKey}
+                    fen={chess.fen()} 
+                    onSelectMove={handleStockfishMoveSelect}
                   />
-                </div>
-
-                <div className="mt-4 grid grid-cols-3 gap-2 items-center">
-                  <Button
-                    variant="outline"
-                    onClick={goToPreviousMove}
-                    disabled={currentPosition === 0}
-                    className="flex items-center justify-center"
-                  >
-                    <ChevronLeft className="mr-1 h-4 w-4" />
-                    Previous
-                  </Button>
-
-                  <div className="text-center">
-                    {dataLoaded && (
-                      <Badge variant="outline" className="mx-auto">
-                        {currentGames.length} / {totalGames} games ({(positionFrequency * 100).toFixed(1)}%)
-                      </Badge>
-                    )}
+                ) : (
+                  <div className="text-center py-2 text-muted-foreground text-sm">
+                    Analysis disabled
                   </div>
-
-                  <Button
-                    variant="outline"
-                    onClick={goToNextMove}
-                    disabled={currentPosition >= moveHistory.length}
-                    className="flex items-center justify-center"
-                  >
-                    Next
-                    <ChevronRight className="ml-1 h-4 w-4" />
-                  </Button>
-                </div>
-
-                <div className="mt-6 text-sm text-muted-foreground">
-                  <p>
-                    <span className="font-semibold">How to use:</span> Click on available moves in the list or drag pieces on the board to explore the repertoire. The statistics show the success rate of each move from the player's perspective. Use arrow keys (← →) for navigation.
-                  </p>
-                </div>
+                )}
               </CardContent>
             </Card>
 
-            <div className="flex flex-col gap-6">
-              <Card>
-                <CardHeader className="pb-1 flex flex-row items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center">
-                      <span className="mr-auto">Stockfish Analysis</span>
-                    </CardTitle>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-muted-foreground">
-                      {stockfishEnabled ? 'Enabled' : 'Disabled'}
-                    </span>
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={handleStockfishToggle}
-                      className={stockfishEnabled ? "bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-500" : "bg-green-100 dark:bg-green-900/20"}
-                    >
-                      {stockfishEnabled ? 'Disable' : 'Enable'}
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {stockfishEnabled ? (
-                    <StockfishAnalysis 
-                      key={stockfishAnalysisKey}
-                      fen={chess.fen()} 
-                      onSelectMove={handleStockfishMoveSelect}
-                    />
-                  ) : (
-                    <div className="text-center py-2 text-muted-foreground text-sm">
-                      Analysis disabled
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {formSubmitted && dataLoaded && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <div>Moves Played</div>
-                      <Badge variant={isWhiteToPlay ? "default" : "secondary"} className="text-xs">
-                        {playerToMove} to play
-                      </Badge>
-                    </CardTitle>
-                    <CardDescription>
-                      Statistics of moves played in this position
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {!availableMoves.length ? (
-                      <div className="text-center py-4 text-muted-foreground">
-                        No moves available in this position.
-                      </div>
-                    ) : (
-                      <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
-                        {availableMoves.map((move) => {
-                          const winRate = (move.wins / move.count) * 100;
-                          let colorClass = "";
-                          
-                          if (winRate >= 60) colorClass = "bg-green-600 text-white";
-                          else if (winRate >= 50) colorClass = "bg-green-500 text-white";
-                          else if (winRate >= 40) colorClass = "bg-amber-500 text-white";
-                          else colorClass = "bg-red-500 text-white";
-                          
-                          return (
-                            <div
-                              key={move.san}
-                              className="flex items-center justify-between p-2 rounded-md hover:bg-accent/10 cursor-pointer border border-muted/60 transition-all duration-200 hover:border-accent/60"
-                              onClick={() => makeMove(move.san)}
-                            >
-                              <div className="font-medium">{move.san}</div>
-                              <div className="flex items-center gap-2">
-                                <Badge className={colorClass}>
-                                  {winRate.toFixed(0)}%
-                                </Badge>
-                                <Badge variant="outline">
-                                  {move.count} game{move.count > 1 ? "s" : ""}
-                                </Badge>
-                                {move.elo > 0 && (
-                                  <Badge variant="outline" className="bg-blue-500/10">
-                                    {move.elo} ELO
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-
             {formSubmitted && dataLoaded && (
               <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle>Games</CardTitle>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <div>Moves Played</div>
+                    <Badge variant={isWhiteToPlay ? "default" : "secondary"} className="text-xs">
+                      {playerToMove} to play
+                    </Badge>
+                  </CardTitle>
                   <CardDescription>
-                    Most recent games with this position
+                    Statistics of moves played in this position
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {currentGames.length === 0 ? (
+                  {!availableMoves.length ? (
                     <div className="text-center py-4 text-muted-foreground">
-                      No games found for this position.
+                      No moves available in this position.
                     </div>
                   ) : (
-                    <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2">
-                      {currentGames.slice(0, 3).map((game) => {
-                        const isWin = (game.result === '1-0' && side === 'white') || 
-                              (game.result === '0-1' && side === 'black');
-                        const isDraw = game.result === '1/2-1/2';
-                        const isOngoing = game.result === '*';
+                    <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+                      {availableMoves.map((move) => {
+                        const winRate = (move.wins / move.count) * 100;
+                        let colorClass = "";
                         
-                        const resultVariant = isWin ? "default" : 
-                                            isDraw ? "outline" : 
-                                            isOngoing ? "secondary" : "destructive";
-                                            
-                        const formattedDate = new Date(game.date).toLocaleDateString(undefined, {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric'
-                        });
+                        if (winRate >= 60) colorClass = "bg-green-600 text-white";
+                        else if (winRate >= 50) colorClass = "bg-green-500 text-white";
+                        else if (winRate >= 40) colorClass = "bg-amber-500 text-white";
+                        else colorClass = "bg-red-500 text-white";
                         
                         return (
-                          <div key={game.id} className="flex items-center justify-between p-2 border rounded-md hover:bg-accent/5">
-                            <div className="flex-1 min-w-0 mr-2">
-                              <div className="flex items-center gap-2">
-                                <Badge variant={resultVariant} className="shrink-0">
-                                  {game.result}
+                          <div
+                            key={move.san}
+                            className="flex items-center justify-between p-2 rounded-md hover:bg-accent/10 cursor-pointer border border-muted/60 transition-all duration-200 hover:border-accent/60"
+                            onClick={() => makeMove(move.san)}
+                          >
+                            <div className="font-medium">{move.san}</div>
+                            <div className="flex items-center gap-2">
+                              <Badge className={colorClass}>
+                                {winRate.toFixed(0)}%
+                              </Badge>
+                              <Badge variant="outline">
+                                {move.count} game{move.count > 1 ? "s" : ""}
+                              </Badge>
+                              {move.elo > 0 && (
+                                <Badge variant="outline" className="bg-blue-500/10">
+                                  {move.elo} ELO
                                 </Badge>
-                                <span className="font-medium truncate">
-                                  {game.white} ({game.whiteElo}) vs {game.black} ({game.blackElo})
-                                </span>
-                                <span className="text-xs text-muted-foreground whitespace-nowrap">
-                                  <Calendar className="inline h-3 w-3 mr-1" />
-                                  {formattedDate}
-                                </span>
-                              </div>
+                              )}
                             </div>
-                            <a
-                              href={`https://${platform === 'lichess' ? 'lichess.org' : 'chess.com'}/game/${game.id}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="shrink-0 ml-auto"
-                            >
-                              <Button variant="ghost" size="sm" className="h-8 px-2">
-                                <ExternalLink className="h-3 w-3" />
-                              </Button>
-                            </a>
                           </div>
                         );
                       })}
-                      {currentGames.length > 3 && (
-                        <div className="text-center text-sm text-muted-foreground py-2">
-                          + {currentGames.length - 3} more games
-                        </div>
-                      )}
                     </div>
                   )}
                 </CardContent>
@@ -894,55 +801,126 @@ export default function RepertoirePage() {
           </div>
 
           {formSubmitted && dataLoaded && (
-            <Card className="mt-4">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Info className="h-4 w-4" />
-                  About Opening Repertoire Analysis
-                </CardTitle>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle>Games</CardTitle>
+                <CardDescription>
+                  Most recent games with this position
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  This tool analyzes a player's chess games to build a comprehensive view of their opening repertoire. 
-                  Moves are sorted by frequency, allowing you to see which lines the player prefers. The win rate percentage 
-                  indicates how successful the player has been with each move. You can navigate through the move tree by 
-                  clicking on moves or using the arrow keys.
-                </p>
-                <Separator className="my-4" />
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                  <div>
-                    <h3 className="font-medium mb-1">Win Rate</h3>
-                    <p className="text-muted-foreground">
-                      Percentage of games won after playing this move. Higher is better.
-                    </p>
+                {currentGames.length === 0 ? (
+                  <div className="text-center py-4 text-muted-foreground">
+                    No games found for this position.
                   </div>
-                  <div>
-                    <h3 className="font-medium mb-1">Game Count</h3>
-                    <p className="text-muted-foreground">
-                      Number of games where this move was played in this position.
-                    </p>
+                ) : (
+                  <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2">
+                    {currentGames.slice(0, 3).map((game) => {
+                      const isWin = (game.result === '1-0' && side === 'white') || 
+                            (game.result === '0-1' && side === 'black');
+                      const isDraw = game.result === '1/2-1/2';
+                      const isOngoing = game.result === '*';
+                      
+                      const resultVariant = isWin ? "default" : 
+                                          isDraw ? "outline" : 
+                                          isOngoing ? "secondary" : "destructive";
+                                          
+                      const formattedDate = new Date(game.date).toLocaleDateString(undefined, {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                      });
+                      
+                      return (
+                        <div key={game.id} className="flex items-center justify-between p-2 border rounded-md hover:bg-accent/5">
+                          <div className="flex-1 min-w-0 mr-2">
+                            <div className="flex items-center gap-2">
+                              <Badge variant={resultVariant} className="shrink-0">
+                                {game.result}
+                              </Badge>
+                              <span className="font-medium truncate">
+                                {game.white} ({game.whiteElo}) vs {game.black} ({game.blackElo})
+                              </span>
+                              <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                <Calendar className="inline h-3 w-3 mr-1" />
+                                {formattedDate}
+                              </span>
+                            </div>
+                          </div>
+                          <a
+                            href={`https://${platform === 'lichess' ? 'lichess.org' : 'chess.com'}/game/${game.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="shrink-0 ml-auto"
+                          >
+                            <Button variant="ghost" size="sm" className="h-8 px-2">
+                              <ExternalLink className="h-3 w-3" />
+                            </Button>
+                          </a>
+                        </div>
+                      );
+                    })}
+                    {currentGames.length > 3 && (
+                      <div className="text-center text-sm text-muted-foreground py-2">
+                        + {currentGames.length - 3} more games
+                      </div>
+                    )}
                   </div>
-                  <div>
-                    <h3 className="font-medium mb-1">Engine Evaluation</h3>
-                    <p className="text-muted-foreground">
-                      Stockfish evaluation shows the best move and score in pawns (e.g., +1.5 means white is ahead by 1.5 pawns). 
-                      Positive values favor White, negative values favor Black. 
-                      "M" followed by a number indicates a forced checkmate in that many moves.
-                      <a href="https://stockfishchess.org/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline ml-1">
-                        Powered by Stockfish.
-                      </a>
-                    </p>
-                  </div>
-                </div>
-                <div className="text-center text-xs text-muted-foreground mt-6">
-                  This page is inspired by <a href="https://openingtree.com/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-                    OpeningTree.com
-                  </a>
-                </div>
+                )}
               </CardContent>
             </Card>
           )}
         </div>
+
+        {formSubmitted && dataLoaded && (
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Info className="h-4 w-4" />
+                About Opening Repertoire Analysis
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                This tool analyzes a player's chess games to build a comprehensive view of their opening repertoire. 
+                Moves are sorted by frequency, allowing you to see which lines the player prefers. The win rate percentage 
+                indicates how successful the player has been with each move. You can navigate through the move tree by 
+                clicking on moves or using the arrow keys.
+              </p>
+              <Separator className="my-4" />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div>
+                  <h3 className="font-medium mb-1">Win Rate</h3>
+                  <p className="text-muted-foreground">
+                    Percentage of games won after playing this move. Higher is better.
+                  </p>
+                </div>
+                <div>
+                  <h3 className="font-medium mb-1">Game Count</h3>
+                  <p className="text-muted-foreground">
+                    Number of games where this move was played in this position.
+                  </p>
+                </div>
+                <div>
+                  <h3 className="font-medium mb-1">Engine Evaluation</h3>
+                  <p className="text-muted-foreground">
+                    Stockfish evaluation shows the best move and score in pawns (e.g., +1.5 means white is ahead by 1.5 pawns). 
+                    Positive values favor White, negative values favor Black. 
+                    "M" followed by a number indicates a forced checkmate in that many moves.
+                    <a href="https://stockfishchess.org/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline ml-1">
+                      Powered by Stockfish.
+                    </a>
+                  </p>
+                </div>
+              </div>
+              <div className="text-center text-xs text-muted-foreground mt-6">
+                This page is inspired by <a href="https://openingtree.com/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                  OpeningTree.com
+                </a>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
