@@ -14,7 +14,7 @@ export default function RequireAuth({ children }: RequireAuthProps) {
   const pathname = usePathname();
 
   // Pages that don't require authentication
-  const publicPages = ['/', '/signin', '/signup'];
+  const publicPages = ['/', '/signin', '/signup', '/chess-locations', '/forgot-password'];
 
   useEffect(() => {
     if (!loading && !user) {

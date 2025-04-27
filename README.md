@@ -1,41 +1,23 @@
 # ChessApp
 
-## Pitch
+ChessApp is an open-source chess analytics platform. Search for FIDE players, analyze games, explore opening repertoires, and simulate Elo changes—all in one place.
 
-ChessApp connects official FIDE profiles to Chess.com accounts, helping chess players identify their opponents online instantly.
+- 🌐 Live: [ChessApp](https://chessapp-ksqc.vercel.app)
+- 🛠️ Built with Next.js, React, Tailwind CSS, Prisma, and TypeScript
+- ♟️ Supports FIDE, Chess.com, and Lichess.org data
+- 📊 Features: Player search, opening explorer, game analysis, Elo calculator, and more
 
-## Description
+## Getting Started
 
-ChessApp helps chess players to:
+1. Install dependencies:
 
--   Search any FIDE-rated player instantly
--   View their complete FIDE information
--   Find their potential Chess.com accounts
+```bash
+npm install
+```
 
-## Features
+2. Set up your environment variables (see `.env.example`).
 
--  [x] Search any FIDE player
--  [x] Detailed FIDE info display (ratings, titles)
--  [x] Direct link to official FIDE profile
--  [x]  Searching possible Chess.com accounts
--  [ ] Searching possible Lichess.org accounts
--  [ ] Searching with emails
--  [ ] Data export
--  [ ] Search history
-
-## Wireframe
-[Wireframe Figma](https://www.figma.com/slides/4LNDMcsuOlzmuEYS8XgmR0/ChessApp-Wireframe?node-id=1-8&t=vYX61sxkQIqhlrU4-0)
-
-## Tech Stack
-
--   **Frontend:** Next.js 13+, TailwindCSS, ShadcnUI
--   **Backend:** Next.js API Routes
--   **Libraries:** Lodash
--   **Deployment:** Vercel
--   **External APIs:** FIDE API, Chess.com API
-
-
-## Installation & Launch
+3. Run the development server:
 
 ```bash
 # Clone the repository
@@ -52,16 +34,39 @@ npm install
 
 # Start the project in development mode
 npm run dev
-
-# Build the project
-npm run build
 ```
+
+Open [http://localhost:3000](http://localhost:3000) to view the app.
+
+## Contributing
+
+ChessApp is open-source! Contributions, bug reports, and feature requests are welcome.
+
+- 🐛 Report issues: [https://github.com/pwned841/chessapp/issues](https://github.com/pwned841/chessapp/issues)
+
+## Features
+
+- Search and view FIDE player profiles
+- Find linked Chess.com and Lichess.org accounts
+- Explore opening repertoires with Stockfish analysis
+- Analyze games and get improvement tips
+- Simulate Elo changes for matches and tournaments
+- Map of chess clubs and locations
+
+## Tech Stack
+
+- Next.js (App Router)
+- React
+- Tailwind CSS
+- Prisma ORM
+- PostgreSQL
+- Framer Motion
+- Stockfish (browser engine)
 
 ## License
 
-No license because the project is private.
+MIT
 
-## Author
+---
 
--  Rémi EMERIAU alias pwned841
-- [Github](https://github.com/pwned841)
+If you find a bug or want to suggest a feature, please open an issue on GitHub!

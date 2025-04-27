@@ -31,22 +31,29 @@ interface FIDEInfoProps {
 export function FIDEInfo({ playerInfo }: FIDEInfoProps) {
     const formatDate = (dateString?: string) => {
         if (!dateString) return 'Unknown';
-        return new Date(dateString).toLocaleDateString();
+        // Si c'est juste une année (ex: '1990'), retourne l'année
+        if (/^\d{4}$/.test(dateString)) {
+            return dateString;
+        }
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return dateString; // fallback: show as-is
+        return date.toLocaleDateString();
     };
 
     const calculateAge = (birthday?: string) => {
         if (!birthday) return 'Unknown';
-        
+        // Si c'est juste une année (ex: '1990'), calcule l'âge simplement
+        if (/^\d{4}$/.test(birthday)) {
+            const birthYear = parseInt(birthday, 10);
+            return (new Date().getFullYear() - birthYear).toString();
+        }
         const birthDate = new Date(birthday);
         const today = new Date();
-        
         let age = today.getFullYear() - birthDate.getFullYear();
         const monthDiff = today.getMonth() - birthDate.getMonth();
-        
         if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
             age--;
         }
-        
         return age.toString();
     };
 
@@ -82,11 +89,11 @@ export function FIDEInfo({ playerInfo }: FIDEInfoProps) {
                 <div className="bg-white rounded-lg shadow-sm p-4">
                     <h3 className="font-semibold text-lg text-gray-700 mb-2">Standard</h3>
                     <div className="text-center">
-                        <span className="text-3xl font-bold text-purple-700">{playerInfo.rating || '—'}</span>
-                        {playerInfo.games && (
+                        <span className="text-3xl font-bold text-purple-700">{(playerInfo.rating && playerInfo.rating > 0) ? playerInfo.rating : 'not rated'}</span>
+                        {playerInfo.games && playerInfo.games > 0 && (
                             <p className="text-sm text-gray-500 mt-1">Games: {playerInfo.games}</p>
                         )}
-                        {playerInfo.k && (
+                        {playerInfo.k && playerInfo.k > 0 && (
                             <p className="text-sm text-gray-500">K-factor: {playerInfo.k}</p>
                         )}
                     </div>
@@ -95,11 +102,11 @@ export function FIDEInfo({ playerInfo }: FIDEInfoProps) {
                 <div className="bg-white rounded-lg shadow-sm p-4">
                     <h3 className="font-semibold text-lg text-gray-700 mb-2">Rapid</h3>
                     <div className="text-center">
-                        <span className="text-3xl font-bold text-purple-700">{playerInfo.rapid_rating || '—'}</span>
-                        {playerInfo.rapid_games && (
+                        <span className="text-3xl font-bold text-purple-700">{(playerInfo.rapid_rating && playerInfo.rapid_rating > 0) ? playerInfo.rapid_rating : 'not rated'}</span>
+                        {playerInfo.rapid_games && playerInfo.rapid_games > 0 && (
                             <p className="text-sm text-gray-500 mt-1">Games: {playerInfo.rapid_games}</p>
                         )}
-                        {playerInfo.rapid_k && (
+                        {playerInfo.rapid_k && playerInfo.rapid_k > 0 && (
                             <p className="text-sm text-gray-500">K-factor: {playerInfo.rapid_k}</p>
                         )}
                     </div>
@@ -108,11 +115,11 @@ export function FIDEInfo({ playerInfo }: FIDEInfoProps) {
                 <div className="bg-white rounded-lg shadow-sm p-4">
                     <h3 className="font-semibold text-lg text-gray-700 mb-2">Blitz</h3>
                     <div className="text-center">
-                        <span className="text-3xl font-bold text-purple-700">{playerInfo.blitz_rating || '—'}</span>
-                        {playerInfo.blitz_games && (
+                        <span className="text-3xl font-bold text-purple-700">{(playerInfo.blitz_rating && playerInfo.blitz_rating > 0) ? playerInfo.blitz_rating : 'not rated'}</span>
+                        {playerInfo.blitz_games && playerInfo.blitz_games > 0 && (
                             <p className="text-sm text-gray-500 mt-1">Games: {playerInfo.blitz_games}</p>
                         )}
-                        {playerInfo.blitz_k && (
+                        {playerInfo.blitz_k && playerInfo.blitz_k > 0 && (
                             <p className="text-sm text-gray-500">K-factor: {playerInfo.blitz_k}</p>
                         )}
                     </div>

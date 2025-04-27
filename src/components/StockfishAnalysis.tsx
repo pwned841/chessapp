@@ -162,7 +162,8 @@ const StockfishAnalysis: React.FC<StockfishAnalysisProps> = ({ fen, onSelectMove
 
   const handleMoveClick = () => {
     if (onSelectMove && bestMove) {
-      onSelectMove(bestMove.move);
+      // Correction : passer le coup en SAN, pas en UCI
+      onSelectMove(bestMove.san);
     }
   };
 
