@@ -10,21 +10,7 @@ interface RequireAuthProps {
 
 export default function RequireAuth({ children }: RequireAuthProps) {
   const { user, loading } = useAuth();
-  const router = useRouter();
-  const pathname = usePathname();
-
-  // Pages that don't require authentication
-  const publicPages = ['/', '/signin', '/signup', '/chess-locations', '/forgot-password'];
-
-  useEffect(() => {
-    if (!loading && !user) {
-      // If the user is not logged in and the current page is not public
-      if (!publicPages.includes(pathname)) {
-        router.push('/signin');
-      }
-    }
-  }, [user, loading, router, pathname]);
-
+  
   // Show loading indicator
   if (loading) {
     return (
@@ -34,11 +20,6 @@ export default function RequireAuth({ children }: RequireAuthProps) {
     );
   }
 
-  // Allow access to public pages without login, or to any page if user is logged in
-  if (publicPages.includes(pathname) || user) {
-    return <>{children}</>;
-  }
-
-  // Don't render anything during redirection
-  return null;
+  // Allow access to all pages regardless of authentication status
+  return <>{children}</>;
 }
