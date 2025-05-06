@@ -1,54 +1,23 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { createServerClient } from '@supabase/ssr';
+import { rateLimit } from '@/lib/rateLimit';
 
 export async function middleware(request: NextRequest) {
-  // Only protect API routes (except specific public endpoints)
+  console.log(`Middleware intercepted: ${request.nextUrl.pathname}`);
+  
+  // Only apply rate limiting to API routes
   if (request.nextUrl.pathname.startsWith('/api/')) {
-    // Allow access to public endpoints
-    const publicApiPaths = [
-      '/api/chess-locations',
-      '/api/forgot-password',
-    ];
+    // ------ Rate Limiting ------
+    // Simple rate limiting to prevent abuse
+    const rateLimitConfig = { maxRequests: 50, windowSizeInSeconds: 60 };  // 50 requêtes par minute
     
-    // Check if current path is a public endpoint
-    for (const path of publicApiPaths) {
-      if (request.nextUrl.pathname.startsWith(path)) {
-        return NextResponse.next();
-      }
-    }
-    
-    // Get cookies from the request
-    const requestHeaders = new Headers(request.headers);
-    const responseCookies = requestHeaders.get('cookie') || '';
-    
-    // Create a Supabase client
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            const match = responseCookies.match(new RegExp(`(^|;\\s*)${name}=([^;]*)`));
-            return match ? decodeURIComponent(match[2]) : undefined;
-          },
-        },
-      }
-    );
-    
-    // Check if user is authenticated
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    // If no session exists, user is not authenticated
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Unauthorized: Authentication required' },
-        { status: 401 }
-      );
+    const rateLimitResponse = await rateLimit(request, rateLimitConfig);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
     }
   }
   
-  // Allow the request to continue
+  // Allow all requests to continue
   return NextResponse.next();
 }
 

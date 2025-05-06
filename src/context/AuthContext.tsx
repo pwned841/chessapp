@@ -3,7 +3,9 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
+import { loginWithJWT, logout as jwtLogout, getCurrentUser, isAuthenticated } from '@/lib/authService';
 
+// Type étendu pour inclure à la fois l'authentification Supabase et JWT
 type AuthContextType = {
   session: Session | null;
   user: User | null;
@@ -11,6 +13,8 @@ type AuthContextType = {
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string) => Promise<{ error: any, data: any }>;
   signOut: () => Promise<void>;
+  // Nouvelle méthode pour l'authentification JWT
+  signInWithJWT: (email: string, password: string) => Promise<{ error: any }>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,6 +26,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const setData = async () => {
+      // Vérifier d'abord l'authentification JWT
+      if (typeof window !== 'undefined' && isAuthenticated()) {
+        const jwtUser = getCurrentUser();
+        if (jwtUser) {
+          // Créer un user "compatible" avec l'API Supabase
+          const compatUser = {
+            id: jwtUser.id,
+            email: jwtUser.email || '',
+            app_metadata: {},
+            user_metadata: {},
+            aud: 'authenticated',
+            created_at: '',
+          } as User;
+          
+          setUser(compatUser);
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Si pas d'auth JWT, essayer Supabase
       const { data: { session }, error } = await supabase.auth.getSession();
       if (error) {
         console.error(error);
@@ -45,9 +70,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  // Méthode de connexion avec Supabase
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     return { error };
+  };
+
+  // Nouvelle méthode de connexion avec JWT
+  const signInWithJWT = async (email: string, password: string) => {
+    const response = await loginWithJWT(email, password);
+    
+    if (response.token && !response.error) {
+      // Créer un utilisateur compatible si la connexion est réussie
+      if (response.user) {
+        const compatUser = {
+          id: response.user.id,
+          email: response.user.email || '',
+          app_metadata: {},
+          user_metadata: {},
+          aud: 'authenticated',
+          created_at: '',
+        } as User;
+        
+        setUser(compatUser);
+        // On ne définit pas de session ici car nous utilisons JWT
+      }
+      return { error: null };
+    }
+    
+    return { error: response.error || 'Échec de connexion' };
   };
 
   const signUp = async (email: string, password: string) => {
@@ -56,7 +107,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
+    // Déconnexion des deux systèmes
     await supabase.auth.signOut();
+    jwtLogout();
+    
+    // Reset l'état local
+    setUser(null);
+    setSession(null);
   };
 
   const value = {
@@ -64,6 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     loading,
     signIn,
+    signInWithJWT,
     signUp,
     signOut,
   };

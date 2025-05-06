@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { apiGet } from '../lib/apiUtils';
 
 interface ChesscomSearchProps {
     name: string;
@@ -156,19 +157,17 @@ export function ChesscomSearch({ name }: ChesscomSearchProps) {
                 try {
                     console.log(`Searching Chess.com for: ${combination}`);
                     
-                    const response = await fetch(`/api/chesscom/search?name=${encodeURIComponent(combination)}`);
+                    // Utiliser apiGet au lieu de fetch
+                    const data = await apiGet(`/api/chesscom/search?name=${encodeURIComponent(combination)}`);
                     
-                    if (response.ok) {
-                        const data = await response.json();
-                        if (Array.isArray(data)) {
-                            data.forEach(player => {
-                                if (!foundPlayers.some(p => p.username === player.username)) {
-                                    foundPlayers.push(player);
-                                }
-                            });
-                            
-                            setPlayers([...foundPlayers]);
-                        }
+                    if (Array.isArray(data)) {
+                        data.forEach(player => {
+                            if (!foundPlayers.some(p => p.username === player.username)) {
+                                foundPlayers.push(player);
+                            }
+                        });
+                        
+                        setPlayers([...foundPlayers]);
                     }
                 } catch (err) {
                     console.error(`Error with ${combination}:`, err);
