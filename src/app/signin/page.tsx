@@ -14,7 +14,7 @@ export default function SignIn() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn } = useAuth();
+  const { signIn, signInWithJWT } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -23,21 +23,30 @@ export default function SignIn() {
     setLoading(true);
     
     try {
-      const { error } = await signIn(email, password);
+      // Utiliser d'abord l'authentification JWT
+      const jwtAuthResponse = await signInWithJWT(email, password);
       
-      if (error) {
-        toast({
-          title: "Login Failed",
-          description: error.message,
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Login Successful",
-          description: "You are now logged in",
-        });
-        router.push('/'); // Redirection vers la page d'accueil après connexion
+      // Si l'authentification JWT échoue, utiliser Supabase comme fallback
+      if (jwtAuthResponse.error) {
+        console.log('JWT auth failed, trying with Supabase');
+        const { error } = await signIn(email, password);
+        
+        if (error) {
+          toast({
+            title: "Login Failed",
+            description: error.message,
+            variant: "destructive",
+          });
+          return;
+        }
       }
+      
+      // Si tout s'est bien passé
+      toast({
+        title: "Login Successful",
+        description: "You are now logged in",
+      });
+      router.push('/'); // Redirection vers la page d'accueil après connexion
     } catch (error: any) {
       toast({
         title: "Error",
