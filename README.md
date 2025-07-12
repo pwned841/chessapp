@@ -1,72 +1,92 @@
 # ChessApp
 
-ChessApp is an open-source chess analytics platform. Search for FIDE players, analyze games, explore opening repertoires, and simulate Elo changes—all in one place.
+## Pitch
+_Une plateforme d'analyse d'échecs complète qui unifie les données FIDE, Chess.com et Lichess pour offrir aux joueurs d'échecs des outils d'analyse avancés, une recherche de joueurs multicritères, et des fonctionnalités d'exploration d'ouvertures avec Stockfish._
 
-- 🌐 Live: [ChessApp](https://chessapp-ksqc.vercel.app)
-- 🛠️ Built with Next.js, React, Tailwind CSS, Prisma, and TypeScript
-- ♟️ Supports FIDE, Chess.com, and Lichess.org data
-- 📊 Features: Player search, opening explorer, game analysis, Elo calculator, and more
+## Description
+ChessApp est une application web moderne conçue pour les passionnés d'échecs de tous niveaux. Elle résout le problème de la fragmentation des données d'échecs en ligne en centralisant les informations provenant de différentes plateformes.
 
-## Getting Started
-
-1. Install dependencies:
-
-```bash
-npm install
-```
-
-2. Set up your environment variables (see `.env.example`).
-
-3. Run the development server:
-
-```bash
-# Clone the repository
-git clone https://github.com/pwned841/chessapp.git
-
-# Navigate to the folder
-cd chessapp
-
-# Create a .env file and configure your database connection 
-Example: DATABASE_URL=your-database-url
-
-# Install dependencies
-npm install
-
-# Start the project in development mode
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) to view the app.
-
-## Contributing
-
-ChessApp is open-source! Contributions, bug reports, and feature requests are welcome.
-
-- 🐛 Report issues: [https://github.com/pwned841/chessapp/issues](https://github.com/pwned841/chessapp/issues)
+- **Ce que fait ce projet :** ChessApp permet de rechercher des joueurs d'échecs, d'analyser leurs répertoires d'ouvertures, d'explorer des parties, de calculer les variations d'ELO, et de localiser des clubs d'échecs.
+- **Pourquoi ce projet est-il utile :** Il offre une vue unifiée des données d'échecs dispersées sur différentes plateformes, avec des outils d'analyse avancés alimentés par Stockfish.
+- **Qui sont les utilisateurs visés :** Joueurs d'échecs amateurs et professionnels, entraîneurs, analystes de parties, et toute personne souhaitant améliorer son jeu d'échecs.
 
 ## Features
+- [x] Recherche de joueurs FIDE avec base de données complète (1.6M+ joueurs)
+- [x] Intégration Chess.com - recherche et profils des joueurs
+- [x] Intégration Lichess.org - recherche et profils des joueurs
+- [x] Explorateur de répertoires d'ouvertures avec analyse Stockfish
+- [x] Calculateur d'ELO pour matchs individuels et tournois
+- [x] Localisation des clubs d'échecs sur carte interactive
+- [x] Interface responsive avec animations fluides
+- [x] Recherche floue intelligente avec suggestions
+- [ ] Analyse complète de parties avec évaluation des coups
+- [ ] Exportation des données d'analyse
+- [ ] Historique des recherches utilisateur
+- [ ] Tableau de bord personnalisé
+- [ ] Intégration avec d'autres plateformes d'échecs
 
-- Search and view FIDE player profiles
-- Find linked Chess.com and Lichess.org accounts
-- Explore opening repertoires with Stockfish analysis
-- Analyze games and get improvement tips
-- Simulate Elo changes for matches and tournaments
-- Map of chess clubs and locations
+*Ces fonctionnalités visent à créer un écosystème complet d'analyse d'échecs, combinant la puissance de Stockfish avec une interface utilisateur moderne et intuitive.*
 
-## Tech Stack
+## Wireframe
+_Un aperçu visuel de votre projet pour aider à comprendre la structure des pages et l'UX :_
+- L'application est actuellement en ligne : [ChessApp Live](https://chessapp-ksqc.vercel.app)
+- Les wireframes et maquettes sont disponibles dans l'historique des pull requests du projet
 
-- Next.js (App Router)
-- React
-- Tailwind CSS
-- Prisma ORM
-- PostgreSQL
-- Framer Motion
-- Stockfish (browser engine)
+## Stack Technique
+_Décrivez les technologies, frameworks, librairies et outils utilisés :_
+- **Front-end :** Next.js 15, React 18, Tailwind CSS, Framer Motion, Radix UI, Shadcn/UI
+- **Back-end :** Next.js API Routes, Prisma ORM, Node.js
+- **Base de données :** PostgreSQL avec Supabase
+- **Authentification :** Supabase Auth avec JWT
+- **Analyse d'échecs :** Stockfish 16, Chess.js, React-Chessboard
+- **Déploiement :** Vercel
+- **Autres outils :** TypeScript, ESLint, Leaflet (cartes), Fuse.js (recherche floue), Axios
 
-## License
+## Installation & Lancement
+_Indiquez comment cloner, installer les dépendances, lancer le projet en local et éventuellement comment déployer :_
 
-MIT
+```bash
+# Cloner le repo
+git clone https://github.com/pwned841/chessapp.git
+
+# Aller dans le dossier
+cd chessapp
+
+# Installer les dépendances
+npm install
+
+# Configurer les variables d'environnement
+# Créer un fichier .env.local et ajouter :
+# DATABASE_URL=your-database-url
+# NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+# NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+
+# Configurer la base de données avec Prisma
+npx prisma migrate dev
+
+# Lancer le projet en mode développement
+npm run dev
+
+# Build du projet
+npm run build
+
+# Démarrer en mode production
+npm start
+```
+
+## Tests
+
+Les tests sont en cours de développement. Le projet inclut actuellement :
+- Configuration ESLint pour la qualité du code
+- Tests JWT basiques dans `src/tests/jwt-test.ts`
+
+## Auteurs
+
+- **Développeur principal :** [pwned841](https://github.com/pwned841)
+- **Contributeurs :** Contributions bienvenues via GitHub Issues et Pull Requests
 
 ---
 
-If you find a bug or want to suggest a feature, please open an issue on GitHub!
+📧 **Contact :** Vous avez trouvé un bug ou souhaitez suggérer une fonctionnalité ? [Ouvrez une issue](https://github.com/pwned841/chessapp/issues) sur GitHub !
+
+⭐ **Support :** Si ce projet vous plaît, n'hésitez pas à lui donner une étoile sur GitHub !
